@@ -27,13 +27,17 @@ from cnn_char_reader import _dark_neutral_mask
 
 
 def detect_cards(image: Image.Image, min_area_frac=0.0015, max_area_frac=0.25,
-                  min_aspect=0.72, max_aspect=1.4):
+                  min_aspect=0.72, max_aspect=1.4, border_margin_px=1):
     """Return a list of (x0, y0, x1, y1) boxes for card-like blobs.
 
     Filters by area (as a fraction of the whole photo) and aspect ratio
     (cards are close to square regardless of tilt — see the write-up's
-    convex-hull section for why), and drops anything touching the frame
-    edge since that's usually a cut-off object, not a full card.
+    convex-hull section for why), and drops anything within
+    `border_margin_px` of the frame edge since that's usually a cut-off
+    object, not a full card. The default (1px) matches the dataset-building
+    scripts' original behaviour exactly; pass 0 to disable this filter
+    entirely for a hand-held live feed, where a card near the edge of a
+    narrow field of view is common and usually still whole.
     """
     rgb = np.asarray(image.convert("RGB")).astype(np.int16)
     H, W = rgb.shape[:2]
@@ -58,7 +62,8 @@ def detect_cards(image: Image.Image, min_area_frac=0.0015, max_area_frac=0.25,
         aspect = w / h
         if not (min_aspect <= aspect <= max_aspect):
             continue
-        if x0 <= 1 or y0 <= 1 or x1 >= W - 2 or y1 >= H - 2:
+        m = border_margin_px
+        if x0 <= m or y0 <= m or x1 >= (W - 1) - m or y1 >= (H - 1) - m:
             continue
         boxes.append((x0, y0, x1, y1))
 

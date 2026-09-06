@@ -88,7 +88,7 @@ class HybridPipeline:
 
     name = "Hybrid (classical detect + CNN)"
 
-    def __init__(self, device):
+    def __init__(self, device, loose=False):
         import torch
         from PIL import Image
 
@@ -103,11 +103,41 @@ class HybridPipeline:
         self.model, self.classes = M._load_model_for_inference()
         self.model.eval()
 
+        # The classical detector's defaults (area/aspect/border tolerance)
+        # were tuned on carefully-framed photos of the whole deck taken for
+        # dataset construction. A card held up to a webcam by hand routinely
+        # violates all three: it can easily fill more than the 25% frame-area
+        # cap when held close, tilt further than 40% off-square from lens
+        # distortion at short range, and sit near the edge of a narrow field
+        # of view. `loose` widens all three for live use; it does not touch
+        # detect_cards()'s own defaults, so the dataset-building scripts are
+        # unaffected.
+        self.loose = loose
+        self.zero_streak = 0
+
     def __call__(self, frame, conf):
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         pil = self.Image.fromarray(rgb)
+        if self.loose:
+            boxes = self.detect_cards(
+                pil, min_area_frac=0.0006, max_area_frac=0.65,
+                min_aspect=0.5, max_aspect=2.0, border_margin_px=0,
+            )
+        else:
+            boxes = self.detect_cards(pil)
+
+        if not boxes:
+            self.zero_streak += 1
+            if self.zero_streak in (30, 90) or self.zero_streak % 300 == 0:
+                print(f"[hybrid] no card-shaped region found in {self.zero_streak} "
+                      f"consecutive frames — this pipeline never got past "
+                      f"localisation, so no crop reached the classifier. See "
+                      f"README 'Hold the card flat, not up' / Troubleshooting.")
+        else:
+            self.zero_streak = 0
+
         out = []
-        for box in self.detect_cards(pil):
+        for box in boxes:
             crop = self.crop_with_padding(pil, box)
             mask = self.M.extract_card_mask(crop)
             if mask is None:
@@ -162,8 +192,13 @@ def draw_hud(frame, lines, recording=False):
 # ---------------------------------------------------------------------------
 # Sources
 # ---------------------------------------------------------------------------
-def open_source(source):
-    """Returns (capture_or_None, still_image_or_None)."""
+def open_source(source, cap_width=None, cap_height=None):
+    """Returns (capture_or_None, still_image_or_None).
+
+    `cap_width`/`cap_height` are only a request: cv2.VideoCapture silently
+    keeps the current resolution if the device rejects the requested one, so
+    the actual size actually granted is read back and reported either way.
+    """
     if isinstance(source, str) and os.path.isfile(source):
         ext = os.path.splitext(source)[1].lower()
         if ext in {".jpg", ".jpeg", ".png", ".bmp", ".webp"}:
@@ -190,9 +225,18 @@ def open_source(source):
     for api, label in backends:
         cap = cv2.VideoCapture(index) if api is None else cv2.VideoCapture(index, api)
         if cap.isOpened():
-            ok, _ = cap.read()
+            if cap_width:
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, cap_width)
+            if cap_height:
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cap_height)
+            ok, frame = cap.read()
             if ok:
-                print(f"camera {index} opened via {label} backend")
+                h, w = frame.shape[:2]
+                note = "" if (w, h) == (cap_width, cap_height) else (
+                    f" (requested {cap_width}x{cap_height}, camera gave {w}x{h})"
+                    if cap_width else ""
+                )
+                print(f"camera {index} opened via {label} backend at {w}x{h}{note}")
                 return cap, None
         cap.release()
 
@@ -206,7 +250,7 @@ def open_source(source):
 def build_pipeline(kind, args):
     if kind == "yolo":
         return YoloPipeline(args.weights, args.device, args.imgsz)
-    return HybridPipeline(args.device)
+    return HybridPipeline(args.device, loose=args.loose)
 
 
 # ---------------------------------------------------------------------------
@@ -217,8 +261,27 @@ def main():
                     help="camera index (default 0), or path to an image/video")
     ap.add_argument("--pipeline", choices=["yolo", "hybrid"], default="yolo")
     ap.add_argument("--weights", default=DEFAULT_WEIGHTS)
-    ap.add_argument("--conf", type=float, default=0.25)
+    ap.add_argument("--conf", type=float, default=0.15,
+                    help="lower = more forgiving (more, shakier detections). "
+                         "Adjustable live with +/-. Default lowered from "
+                         "YOLO's usual 0.25 since a card on a novel "
+                         "background often needs it.")
     ap.add_argument("--imgsz", type=int, default=640)
+    ap.add_argument("--loose", action="store_true",
+                    help="hybrid pipeline only: widen detect_cards()'s area/"
+                         "aspect/border limits beyond their original, dataset- "
+                         "tuned defaults. Tested and found NOT to fix a card "
+                         "held in hand (that's a hand-shadow segmentation "
+                         "merge, unaffected by these bounds) — it mainly adds "
+                         "false positives on background clutter and on the "
+                         "glyph's own negative-space curves. Off by default "
+                         "for that reason; kept as an opt-in for cases where "
+                         "it's genuinely useful, e.g. a card unusually large "
+                         "or close to the frame edge but NOT hand-held.")
+    ap.add_argument("--cap-width", type=int, default=1280,
+                    help="requested camera capture width; falls back to the "
+                         "camera's default if unsupported")
+    ap.add_argument("--cap-height", type=int, default=720)
     ap.add_argument("--device", default=None,
                     help="'cpu', '0' for first GPU, or omit to auto-select")
     ap.add_argument("--headless", action="store_true",
@@ -246,7 +309,7 @@ def main():
     pipe = build_pipeline(args.pipeline, args)
     print(f"Ready: {pipe.name}")
 
-    cap, still = open_source(args.source)
+    cap, still = open_source(args.source, args.cap_width, args.cap_height)
     os.makedirs(CAPTURES, exist_ok=True)
 
     conf = args.conf
