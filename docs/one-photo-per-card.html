@@ -1,0 +1,575 @@
+<title>One Photo Per Card</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #F3F5F7;
+    --surface: #FFFFFF;
+    --surface-2: #ECEFF2;
+    --ink: #171B1F;
+    --ink-muted: #59636C;
+    --ink-faint: #8A939B;
+    --line: #DBE0E5;
+    --accent: #B45309;
+    --accent-ink: #8A3F08;
+    --accent-wash: rgba(180, 83, 9, 0.10);
+    --good: #2C7A62;
+    --good-wash: rgba(44, 122, 98, 0.11);
+    --code-bg: #12171C;
+    --code-ink: #DCE6E2;
+    --card-ink: #1B1F22; /* the physical black flashcard, same in both themes */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181C;
+      --surface: #1B2126;
+      --surface-2: #212830;
+      --ink: #E9ECEE;
+      --ink-muted: #9AA3AB;
+      --ink-faint: #6E7780;
+      --line: #2B333A;
+      --accent: #F0985C;
+      --accent-ink: #F0985C;
+      --accent-wash: rgba(240, 152, 92, 0.13);
+      --good: #5FBBA0;
+      --good-wash: rgba(95, 187, 160, 0.14);
+      --code-bg: #0C0F12;
+      --code-ink: #D9E4E0;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181C;
+    --surface: #1B2126;
+    --surface-2: #212830;
+    --ink: #E9ECEE;
+    --ink-muted: #9AA3AB;
+    --ink-faint: #6E7780;
+    --line: #2B333A;
+    --accent: #F0985C;
+    --accent-ink: #F0985C;
+    --accent-wash: rgba(240, 152, 92, 0.13);
+    --good: #5FBBA0;
+    --good-wash: rgba(95, 187, 160, 0.14);
+    --code-bg: #0C0F12;
+    --code-ink: #D9E4E0;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 56px 24px 96px; }
+
+  h1, h2, h3 {
+    font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
+    font-weight: 600;
+    text-wrap: balance;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    margin: 0 0 14px;
+  }
+
+  header.report-head {
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 48px;
+  }
+  h1.title { font-size: clamp(32px, 5vw, 44px); letter-spacing: -0.01em; }
+  p.dek {
+    font-size: 18px;
+    color: var(--ink-muted);
+    max-width: 62ch;
+    margin: 14px 0 26px;
+  }
+
+  .spec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .spec-grid > div {
+    background: var(--surface);
+    padding: 12px 16px;
+  }
+  .spec-grid dt {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 4px;
+  }
+  .spec-grid dd {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  section { margin-bottom: 56px; }
+  section > .num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--ink-faint);
+    margin: 0 0 6px;
+  }
+  h2.sec-title { font-size: 26px; margin-bottom: 18px; }
+
+  p { max-width: 68ch; margin: 0 0 16px; }
+  section > p:last-child { margin-bottom: 0; }
+
+  strong { color: var(--ink); font-weight: 600; }
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.88em;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    color: var(--ink);
+  }
+
+  .callout {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin: 20px 0;
+  }
+  .callout.good { border-left-color: var(--good); }
+  .callout p { margin: 0; max-width: none; }
+  .callout .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .callout.good .label { color: var(--good); }
+
+  figure { margin: 28px 0; }
+  .figure-wrap {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+  }
+  figure svg { display: block; margin: 0 auto; max-width: 100%; height: auto; color: var(--ink-muted); }
+  figcaption {
+    font-size: 14px;
+    color: var(--ink-muted);
+    margin-top: 10px;
+    max-width: 68ch;
+  }
+
+  .table-wrap { overflow-x: auto; margin: 20px 0; }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    border-bottom: 1px solid var(--ink-faint);
+  }
+  td.num, th.num { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  .stage-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--accent-wash);
+    color: var(--accent-ink);
+    margin-bottom: 4px;
+  }
+  .stage-tag.fixed { background: var(--good-wash); color: var(--good); }
+
+  .pairs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
+  .pairs li {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 4px 10px;
+    color: var(--ink);
+  }
+
+  ul.arglist { margin: 0 0 16px; padding-left: 22px; max-width: 68ch; }
+  ul.arglist li { margin-bottom: 10px; }
+
+  footer.end {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-size: 13.5px;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 560px) {
+    .page { padding: 36px 16px 72px; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="report-head">
+    <p class="eyebrow">CT3079 Capstone &mdash; Technical Write-Up</p>
+    <h1 class="title">One Photo Per Card</h1>
+    <p class="dek">How a small CNN learned to read 25 flashcards from a single photograph of each &mdash; the two segmentation bugs that broke it, what fixed them, and why reaching for a bigger model would not have.</p>
+    <dl class="spec-grid">
+      <div><dt>Framework</dt><dd>PyTorch (CUDA)</dd></div>
+      <div><dt>Classes</dt><dd>25</dd></div>
+      <div><dt>Real photos</dt><dd>211 &mdash; started at 1 / class</dd></div>
+      <div><dt>Input</dt><dd>64&times;64&times;1 mask</dd></div>
+      <div><dt>Parameters</dt><dd>&asymp;551,000</dd></div>
+    </dl>
+  </header>
+
+  <section>
+    <p class="num">01</p>
+    <h2 class="sec-title">The constraint that shaped everything</h2>
+    <p>The training set is <code>images/img1.jpg</code> through <code>img25.jpg</code>: digits 1&ndash;9 and letters A&ndash;H, S&ndash;V, W&ndash;Z, each a single photograph of one sticker on a black card. Twenty-five classes, twenty-five photographs, one each. No spares.</p>
+    <p>That number is worth sitting with. The usual first move in training a classifier &mdash; hold some examples back to check the model isn&rsquo;t just memorizing &mdash; isn&rsquo;t available when there is exactly one example per class to begin with. Every design decision below exists to route around that fact, not to build a bigger net and hope.</p>
+  </section>
+
+  <section>
+    <p class="num">02</p>
+    <h2 class="sec-title">The network</h2>
+    <p>Three convolutional stages, each halving the spatial size while growing the channel count, feeding a small classifier head:</p>
+
+    <figure>
+      <div class="figure-wrap">
+        <svg viewBox="0 0 960 280" role="img" aria-label="Architecture diagram: a 64 by 64 by 1 input passes through three conv-batchnorm-relu-maxpool blocks shrinking spatial size from 64 to 32 to 16 to 8 while channels grow from 1 to 16 to 32 to 64, then flattens to a 4096 vector, a fully connected layer of 128 with dropout, and a final fully connected layer of 25 classes.">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+            </marker>
+          </defs>
+
+          <!-- connecting arrows, drawn first so boxes sit on top -->
+          <g stroke="currentColor" stroke-width="1.4" fill="none">
+            <line x1="110" y1="140" x2="176" y2="140" marker-end="url(#arrow)" />
+            <line x1="250" y1="140" x2="316" y2="140" marker-end="url(#arrow)" />
+            <line x1="390" y1="140" x2="456" y2="140" marker-end="url(#arrow)" />
+            <line x1="530" y1="140" x2="596" y2="140" marker-end="url(#arrow)" />
+            <line x1="630" y1="140" x2="696" y2="140" marker-end="url(#arrow)" />
+            <line x1="750" y1="140" x2="826" y2="140" marker-end="url(#arrow)" />
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" text-anchor="middle">
+            <text x="143" y="128">conv+pool</text>
+            <text x="283" y="128">conv+pool</text>
+            <text x="423" y="128">conv+pool</text>
+            <text x="563" y="128">flatten</text>
+            <text x="663" y="128">fc+relu</text>
+            <text x="788" y="128">fc</text>
+          </g>
+
+          <!-- input -->
+          <rect x="40" y="95" width="70" height="90" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <!-- stage 1 -->
+          <rect x="180" y="105" width="70" height="70" fill="var(--accent-wash)" stroke="currentColor" stroke-width="1.6" />
+          <!-- stage 2 -->
+          <rect x="320" y="114" width="70" height="52" fill="var(--accent-wash)" stroke="currentColor" stroke-width="1.6" />
+          <!-- stage 3 -->
+          <rect x="460" y="121" width="70" height="38" fill="var(--accent-wash)" stroke="currentColor" stroke-width="1.6" />
+          <!-- flatten vector -->
+          <rect x="600" y="85" width="26" height="110" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <!-- fc128 -->
+          <rect x="700" y="110" width="50" height="60" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.6" />
+          <!-- fc25 / output -->
+          <rect x="830" y="123" width="50" height="34" fill="var(--good-wash)" stroke="var(--good)" stroke-width="2" />
+
+          <g font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle" font-weight="500">
+            <text x="205" y="145">16</text>
+            <text x="355" y="145">32</text>
+            <text x="495" y="145">64</text>
+            <text x="725" y="145">128</text>
+            <text x="855" y="145" fill="var(--good)">25</text>
+          </g>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor" text-anchor="middle">
+            <text x="75" y="205">64&times;64&times;1</text>
+            <text x="215" y="205">32&times;32&times;16</text>
+            <text x="355" y="205">16&times;16&times;32</text>
+            <text x="495" y="205">8&times;8&times;64</text>
+            <text x="613" y="205">4096</text>
+            <text x="725" y="205">dropout .3</text>
+            <text x="855" y="205" fill="var(--good)">softmax</text>
+          </g>
+
+          <g font-family="Public Sans, sans-serif" font-size="12.5" fill="currentColor" text-anchor="middle">
+            <text x="75" y="225">input mask</text>
+            <text x="355" y="225">3 conv blocks (BN + ReLU + pool)</text>
+            <text x="613" y="225">flatten</text>
+            <text x="790" y="225">classifier head</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>Each conv block is <code>Conv3&times;3 &rarr; BatchNorm &rarr; ReLU &rarr; MaxPool2&times;2</code>. Box height falls with the shrinking feature map (64&rarr;32&rarr;16&rarr;8); the number inside each box is its channel count. The final layer (green) is the one making the 25-way decision.</figcaption>
+    </figure>
+
+    <p>Total: roughly <strong>551,000 trainable parameters</strong>. Optimized with Adam (lr 1e-3) against cross-entropy loss, batch size 64, 15 epochs. This is a deliberately small network &mdash; the reason why is the whole point of section 5.</p>
+
+    <div class="callout">
+      <span class="label">Design choice</span>
+      <p>The input is not the photo. Each card is a colored glyph on a black square, and the network is fed a <strong>binary silhouette</strong> &mdash; glyph or not-glyph &mdash; not the raw color image. In our 25 photos, color happens to predict the class perfectly (the &ldquo;2&rdquo; is green, the &ldquo;A&rdquo; is yellow&hellip;) purely by coincidence of which sticker got which color. A network fed raw color would take that shortcut instantly, and it would evaporate the moment it saw an &ldquo;A&rdquo; printed in a different color. Stripping color out front closes that shortcut before training even starts.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="num">03</p>
+    <h2 class="sec-title">Manufacturing variety, not information</h2>
+    <p>With one real photo per class, the training set is generated on the fly: each epoch, every class&rsquo;s single template mask is randomly rotated (&plusmn;25&deg;), rescaled (0.82&ndash;1.15&times;), shifted, thickened or thinned a touch, and lightly noised &mdash; 400 synthetic variants per class for training, ~80 for validation, regenerated fresh every epoch.</p>
+    <p>It is important to be honest about what this buys. It multiplies <em>presentation</em> variety &mdash; how the one true stroke pattern happens to be angled, sized, and placed in frame. It cannot multiply <em>information</em> variety: every one of those thousands of synthetic images is still, underneath, the exact same 25 stroke skeletons. That distinction is the hinge the last section turns on.</p>
+  </section>
+
+  <section>
+    <p class="num">04</p>
+    <h2 class="sec-title">Difficulty: the validation number was lying</h2>
+    <p>Validation accuracy hit <strong>99.7%</strong> by epoch 15 of the first run. That should have felt good. It was actually the first warning sign: the validation samples were generated by the <em>same</em> on-the-fly augmenter, from the <em>same</em> 25 templates, as the training samples. It was measuring whether the model could fit its own augmentation recipe &mdash; not whether it could read an actual new photograph.</p>
+    <p>The fix was to stop trusting it. I cropped fresh test images directly out of the three original source photos &mdash; different boxes than the ones used to build the training templates, several with an extra rotation stacked on top &mdash; and ran them through the real <code>predict()</code> path. That is the number that matters from here on.</p>
+  </section>
+
+  <section>
+    <p class="num">05</p>
+    <h2 class="sec-title">Difficulty: tilted cards leaked their corners</h2>
+    <p>On that first independent test, accuracy collapsed to <strong>6 of 10</strong> &mdash; against a validation score of 99.7%. The failures were exactly the visibly tilted cards: &ldquo;1&rdquo; read as &ldquo;4&rdquo; at 99% confidence, a tilted &ldquo;2&rdquo; read as &ldquo;C&rdquo;.</p>
+    <p>The cause was geometric. A photo is cropped to the axis-aligned box around the card&rsquo;s black pixels. For a card sitting square in frame that box <em>is</em> the card. For a tilted card, that box is larger than the card &mdash; its four corners fall outside the tilted square, in the plain background. The first version of the code treated everything in that box that wasn&rsquo;t black as &ldquo;the glyph,&rdquo; which meant four triangles of background paper got folded into the glyph mask along with the real character, badly distorting it.</p>
+
+    <figure>
+      <div class="figure-wrap">
+        <svg viewBox="0 0 800 280" role="img" aria-label="Three panels. Left: a tilted black card inside its dashed bounding box, with four corner triangles of background wrongly shaded as if they were part of the glyph. Middle: a tilted card whose glyph stroke touches the top edge, breaching the outline so the interior leaks out through the gap. Right: the same tilted card with its footprint drawn as the convex hull of the card, correctly following its true edges with no leak and no corner contamination.">
+          <g transform="translate(20,20)">
+            <rect x="41" y="41" width="138" height="138" fill="var(--accent-wash)" />
+            <rect x="41" y="41" width="138" height="138" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 4" />
+            <g transform="rotate(18 110 110)">
+              <rect x="55" y="55" width="110" height="110" fill="var(--card-ink)" />
+              <rect x="95" y="95" width="30" height="30" fill="var(--bg)" />
+            </g>
+            <text x="110" y="228" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="13" fill="currentColor">Corner leak</text>
+            <text x="110" y="246" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--accent-ink)">bbox corners &rarr; wrongly &ldquo;glyph&rdquo;</text>
+          </g>
+
+          <g transform="translate(290,20)">
+            <g transform="rotate(15 110 110)">
+              <rect x="55" y="55" width="110" height="110" fill="var(--card-ink)" />
+              <rect x="95" y="40" width="20" height="50" fill="var(--bg)" />
+            </g>
+            <circle cx="128" cy="42" r="4" fill="var(--accent)" />
+            <line x1="132" y1="38" x2="150" y2="24" stroke="var(--accent)" stroke-width="1.2" />
+            <text x="153" y="21" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--accent-ink)" text-anchor="start">leaks here</text>
+            <text x="110" y="228" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="13" fill="currentColor">Edge breach</text>
+            <text x="110" y="246" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--accent-ink)">stroke touches edge &rarr; hole leaks out</text>
+          </g>
+
+          <g transform="translate(560,20)">
+            <rect x="41" y="41" width="138" height="138" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 4" opacity="0.5" />
+            <g transform="rotate(18 110 110)">
+              <rect x="55" y="55" width="110" height="110" fill="var(--card-ink)" />
+              <rect x="95" y="95" width="30" height="30" fill="var(--bg)" />
+              <rect x="53" y="53" width="114" height="114" fill="none" stroke="var(--good)" stroke-width="2.5" />
+            </g>
+            <circle cx="73.4" cy="38.2" r="3" fill="var(--good)" />
+            <circle cx="181.8" cy="73.4" r="3" fill="var(--good)" />
+            <circle cx="146.6" cy="181.8" r="3" fill="var(--good)" />
+            <circle cx="38.2" cy="146.6" r="3" fill="var(--good)" />
+            <text x="110" y="228" text-anchor="middle" font-family="Public Sans, sans-serif" font-size="13" fill="currentColor">The fix</text>
+            <text x="110" y="246" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--good)">footprint = convex hull</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>Both failures came from the same wrong assumption: that the card&rsquo;s black pixels had to form a sealed ring around the glyph. A physical card is just a tilted square &mdash; a convex shape &mdash; so its real footprint is the convex hull of its black pixels, sealed ring or not. That one idea fixed both panels at once.</figcaption>
+    </figure>
+
+    <p>The first attempt was narrower than that: fill the holes in the card&rsquo;s black-pixel blob (plus a small morphological closing to bridge JPEG-blur gaps). That fixed the corner leak and pushed a proper 25-card independent test to <strong>21 of 25 (84%)</strong> &mdash; but a new failure mode showed up in its place.</p>
+  </section>
+
+  <section>
+    <p class="num">06</p>
+    <h2 class="sec-title">Difficulty: some glyphs touch the card&rsquo;s own edge</h2>
+    <p>The digit &ldquo;6&rdquo; kept misreading, and the debug output explained why: the pixel count of its &ldquo;filled&rdquo; footprint was <em>identical</em> to its unfilled black-pixel count. Nothing had been filled at all. The top curl of the &ldquo;6&rdquo; runs right up to the card&rsquo;s physical top edge, breaching the outline &mdash; so the interior wasn&rsquo;t a sealed hole to begin with, it was already connected to the background outside the card, and no amount of hole-filling can fill a hole that isn&rsquo;t closed.</p>
+    <p>The convex-hull footprint (right panel above) sidesteps the question entirely. It never asks whether the outline is sealed. It asks only where the card&rsquo;s corners are, and fills everything between them &mdash; which is what &ldquo;the card&rdquo; means regardless of what the glyph printed on it happens to touch.</p>
+  </section>
+
+  <section>
+    <p class="num">07</p>
+    <h2 class="sec-title">Where that left the numbers</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Stage</th><th>Footprint logic</th><th class="num">Val. acc.</th><th class="num">Independent test</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="stage-tag">bug</span><br>Naive bbox</td>
+            <td>everything non-black inside the bounding box</td>
+            <td class="num">99.7%</td>
+            <td class="num">6 / 10 (60%)<br><span style="color:var(--ink-faint); font-family:'Public Sans',sans-serif; font-size:12.5px;">ad hoc mixed test</span></td>
+          </tr>
+          <tr>
+            <td><span class="stage-tag">bug</span><br>Fill-holes + closing</td>
+            <td>fill holes in the card&rsquo;s black blob</td>
+            <td class="num">96.7%</td>
+            <td class="num">21 / 25 (84%)<br><span style="color:var(--ink-faint); font-family:'Public Sans',sans-serif; font-size:12.5px;">fair 25-card test</span></td>
+          </tr>
+          <tr>
+            <td><span class="stage-tag fixed">fixed</span><br>Convex hull</td>
+            <td>convex hull of the card&rsquo;s black pixels</td>
+            <td class="num">99.8%</td>
+            <td class="num">20 / 25 (80%)<br><span style="color:var(--ink-faint); font-family:'Public Sans',sans-serif; font-size:12.5px;">same fair test</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The raw count dips slightly on the last row, and that is the interesting result, not a regression. I hand-inspected the mask fed to the model for every one of the 20/25 run&rsquo;s five misses. All five were clean, correctly segmented silhouettes &mdash; the pipeline handed the model exactly the right picture, every time, and the model still guessed wrong:</p>
+    <ul class="pairs">
+      <li>1 &harr; B</li><li>8 &harr; B</li><li>F &harr; 2</li><li>S &harr; 5</li><li>Y &harr; 8</li>
+    </ul>
+    <p style="margin-top:16px;">That is a materially different, better result than 84% on the previous row, where four of the five failures traced to a segmentation bug feeding the model a corrupted picture. What&rsquo;s left now is not a bug queue. It is the model&rsquo;s actual ceiling under this data &mdash; genuine visual confusion between single, real-world look-alike glyphs. That is exactly the finding the next section is built on.</p>
+  </section>
+
+  <section>
+    <p class="num">08</p>
+    <h2 class="sec-title">Why a bigger model would not fix what&rsquo;s left</h2>
+    <p>It is tempting to read &ldquo;80% accuracy&rdquo; and reach for a deeper network, more filters, a pretrained backbone. Here is why none of that addresses what is actually going wrong, using this project&rsquo;s own numbers as the evidence:</p>
+    <ul class="arglist">
+      <li><strong>The bottleneck was never capacity.</strong> The same ~551K-parameter network hit 96&ndash;99.8% on its own training distribution at every stage in the table above. It was never underfitting the data it was given. Every real failure traced to either a corrupted input (sections 5&ndash;6) or a genuine limit on the input itself (section 7) &mdash; neither is a symptom a bigger network treats.</li>
+      <li><strong>A bigger network memorizes the same 25 skeletons more precisely.</strong> More parameters trained on the same augmentation pipeline just fit that narrow manifold harder. It would very plausibly report an even higher in-sample validation score while making the identical 1&harr;B, 8&harr;B, F&harr;2 confusions on a real photo &mdash; because those pairs are confused for a real reason (they look alike), not because 551,000 parameters ran out of room to tell them apart.</li>
+      <li><strong>More capacity is a variance risk here, not a free upgrade.</strong> With 25 real images total, a larger model has more room to fit this-one-photo&rsquo;s specific lighting and JPEG texture as if it were signal. That is the textbook bias&ndash;variance trade in the wrong direction for how little data this is.</li>
+      <li><strong>A pretrained backbone transfers the wrong thing.</strong> ImageNet-style transfer learning earns its keep by carrying over robustness to color, texture, lighting, and background clutter in natural photos. Our masking step (section 2) already threw all of that away on purpose, on purpose, to force the network to look at shape alone. What&rsquo;s left to learn &mdash; telling a hand-tilted &ldquo;S&rdquo; from a hand-tilted &ldquo;5&rdquo; &mdash; isn&rsquo;t a skill a natural-image backbone has any special claim on.</li>
+      <li><strong>What would actually move the number:</strong> five or ten more <em>real</em> photographs of each card, at different angles and lighting. Not more synthetic transforms of the one photo already in hand &mdash; a genuinely new photograph carries real perspective distortion, a real shadow, real sensor noise that an affine-plus-Gaussian-noise recipe cannot invent from nothing, because that information was never in the one image to begin with.</li>
+    </ul>
+    <div class="callout good">
+      <span class="label">The argument, empirically</span>
+      <p>Every accuracy gain in this write-up &mdash; 60% &rarr; 84% &rarr; 80%-with-verified-clean-errors &mdash; came from changing what the fixed-size model was shown, never from making the model bigger. That is not an assertion; it is what happened when the model size was held constant and the data pipeline was the only thing that changed.</p>
+    </div>
+    <p>That last bullet is a prediction, not just an opinion. The rest of this write-up tests it directly.</p>
+  </section>
+
+  <section>
+    <p class="num">09</p>
+    <h2 class="sec-title">Testing the prediction: real photos, at scale</h2>
+    <p>Two more photography sessions followed, this time of <em>multiple</em> cards per photo &mdash; spaced apart deliberately, after an early attempt with cards pushed edge-to-edge taught us that touching cards fuse into one blob under the same connected-component logic section 5 relied on. A general multi-card detector (the same black-mask-plus-convex-hull primitives, run once per photo instead of once per crop) pulled every card candidate out of each new photo automatically; a contact sheet of all candidates let every label get read off and verified by eye rather than assumed from position, since these photos were shot at real perspective and a simple row/column grid doesn&rsquo;t survive that.</p>
+    <p>Real templates went from 25 (one per class) to 104, then to 211 (roughly eight per class). That volume surfaced something the single-template era could never have shown us:</p>
+    <div class="callout">
+      <span class="label">Finding</span>
+      <p>Nine templates turned out to be silently corrupted &mdash; and <strong>four of them were from the original day-one 25</strong> (<code>img2</code>, <code>img3</code>, <code>img8</code>, <code>img12</code>, <code>img19</code>). One had fused with a neighboring card&rsquo;s corner; another sat near a shadowed table edge whose dark bleed made the &ldquo;largest black blob&rdquo; overshoot the actual card, dragging its convex hull &mdash; and the glyph mask inside it &mdash; along with it. These five were never individually looked at when the project had one photo per class; only their pixel <em>counts</em> were sanity-checked, which cannot distinguish a clean glyph from a wrong-shaped one of similar area. With only one example per class there was nothing to contradict a bad template against &mdash; it simply <em>became</em> that class&rsquo;s entire representation. The corruption became visible, and fixable, only once real per-class diversity gave the training set something to disagree with itself about.</p>
+    </div>
+    <p>A second, smaller pattern turned up the same way: a handful of crops from a couple of specific source photos (one with a heavily textured tarp background, one recurring oversized crop of a &ldquo;D&rdquo;) segmented into visibly wrong shapes every time. Those sources were dropped from both training and test data, and are a real, documented boundary of what &ldquo;a photo of the deck&rdquo; can look like for this pipeline &mdash; not every background survives the black-card assumption section 5 and 6 are built on.</p>
+  </section>
+
+  <section>
+    <p class="num">10</p>
+    <h2 class="sec-title">The measurement problem: one run is not a result</h2>
+    <p>Validation accuracy stayed pinned at 97&ndash;99% through every version of this experiment, cleaned data or not, 25 templates or 211. It had stopped being informative long before this point &mdash; it was time to stop trusting single independent-test runs too.</p>
+    <p>Proof of that arrived uninvited. Retraining the exact same 99-template, cleaned configuration &mdash; changing only how long training ran &mdash; produced independent-test scores of 76%, then 76% again, then <strong>60%</strong> after the corrupted templates were removed. Removing noise had made the number go <em>down</em>. Read naively, that says &ldquo;don&rsquo;t bother cleaning your data,&rdquo; which is the wrong lesson: with a training process that has real random stochasticity (which augmented views land in a batch, how weights initialize) and a test set of only 25 examples, one flipped example is a 4-point swing. A single run cannot tell a real 8-point effect apart from noise of that size.</p>
+    <p>Two fixes, both standard practice once the data stopped being scarce enough to excuse skipping them:</p>
+    <ul class="arglist">
+      <li><strong>Train several seeds, report the average.</strong> Five independently-trained models, same config, same test set &mdash; the spread across them <em>is</em> the noise floor, made visible instead of hidden inside one lucky or unlucky run.</li>
+      <li><strong>Grow the test set.</strong> 25 examples means &plusmn;4 points of resolution per flipped case; a fresh 72-example held-out set (new photos, never trained on) cuts that to roughly &plusmn;1.4 points &mdash; enough to actually distinguish configurations instead of reading tea leaves.</li>
+    </ul>
+  </section>
+
+  <section>
+    <p class="num">11</p>
+    <h2 class="sec-title">The result, measured honestly</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Config</th><th class="num">Real templates</th><th class="num">Epochs</th><th>Test set</th><th class="num">Accuracy (5 seeds)</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Cleaned</td>
+            <td class="num">99</td>
+            <td class="num">30</td>
+            <td>25 examples</td>
+            <td class="num">68.8% &plusmn; 1.6%</td>
+          </tr>
+          <tr>
+            <td>Uncleaned <span style="color:var(--ink-faint); font-family:'Public Sans',sans-serif; font-size:12.5px;">(comparison)</span></td>
+            <td class="num">104</td>
+            <td class="num">30</td>
+            <td>25 examples</td>
+            <td class="num">77.6% &plusmn; 6.5%</td>
+          </tr>
+          <tr>
+            <td><span class="stage-tag fixed">final</span><br>Cleaned, scaled</td>
+            <td class="num">211</td>
+            <td class="num">40</td>
+            <td>72 examples, held out</td>
+            <td class="num">81.4% &plusmn; 6.5%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The middle row is included on purpose, not hidden: at 25 templates, the &ldquo;uncleaned&rdquo; run scored <em>higher on average</em> than the cleaned one, with much higher spread. That is a genuinely ambiguous result at that sample size, and the honest conclusion from it is not &ldquo;corruption doesn&rsquo;t matter&rdquo; &mdash; visually verifying training data is still correct practice &mdash; it is &ldquo;this comparison, on its own, isn&rsquo;t decisive.&rdquo; The bottom row is the one worth trusting: a materially higher mean, measured on a test set three times larger and never seen in training, after both real fixes (corruption removed, enough epochs to actually converge &mdash; train accuracy had been silently capped at 77&ndash;90% by too few epochs on the newly-larger dataset, part of the same underfitting pattern as section 10&rsquo;s noise).</p>
+    <p>The variance hasn&rsquo;t vanished &mdash; five seeds still ranged 73.6% to 93.1% &mdash; so the honest way to report this is &ldquo;roughly high-70s to high-80s,&rdquo; not a single decimal. That is itself the section 8 argument playing out a second time: going from one real photo per class to eight did what no architecture change was ever going to do.</p>
+    <p>That last claim is, again, a prediction rather than an opinion &mdash; that the identical ~551,000-parameter network from section 2 is the right amount of model for this job, and changing it wouldn&rsquo;t help. The next section puts that to the test too.</p>
+  </section>
+
+  <section>
+    <p class="num">12</p>
+    <h2 class="sec-title">One more test: a smaller head, on paper justified</h2>
+    <p>Section 2 flagged it in passing: of the network&rsquo;s 550,937 parameters, <strong>524,416 (95%) sit in one layer</strong> &mdash; the <code>Linear(4096, 128)</code> that follows flattening the 8&times;8&times;64 feature map. That layer doesn&rsquo;t just weigh what each channel detected; it weighs <em>where in an 8&times;8 grid</em> each channel detected it, which is a lot of surface area for a network trained mostly on synthetic augmentation of a few dozen real photos per class to overfit.</p>
+    <p>The standard fix is global average pooling: collapse each channel to its mean activation and feed <em>that</em> to a small classifier, dropping the layer to roughly 45,000 parameters &mdash; a 12&times; cut, aimed squarely at the overfitting risk section 8 warned about. It&rsquo;s a well-reasoned change. Measured head-to-head against the FC version, on the identical 5-seed, 72-example evaluation from section 11:</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Head</th><th class="num">Parameters</th><th class="num">Accuracy (5 seeds)</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="stage-tag fixed">kept</span><br>Flatten &rarr; FC(4096&rarr;128) &rarr; FC(128&rarr;25)</td>
+            <td class="num">&asymp;551,000</td>
+            <td class="num">81.4% &plusmn; 6.5%</td>
+          </tr>
+          <tr>
+            <td><span class="stage-tag">reverted</span><br>Global average pool &rarr; FC(128&rarr;25)</td>
+            <td class="num">&asymp;45,000</td>
+            <td class="num">55.6% &plusmn; 9.8%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A 26-point drop, with the smaller model also <em>more</em> variable across seeds, not less &mdash; the opposite of what a successful anti-overfitting change should produce. The reasoning wasn&rsquo;t wrong about the risk; it was wrong about what this particular task needs. Global average pooling is built for the case where a feature is meaningful wherever it appears in frame &mdash; the right assumption for a large object loose in a photo, not for a glyph that&rsquo;s already been cropped and centered by the segmentation pipeline in sections 5&ndash;6. Telling &ldquo;S&rdquo; from &ldquo;5,&rdquo; or &ldquo;8&rdquo; from &ldquo;B,&rdquo; is a question about <em>where</em> the strokes sit relative to each other, not just which stroke-detectors fired somewhere on the card &mdash; exactly the information global average pooling throws away, and exactly what the large FC layer had been quietly encoding all along.</p>
+    <div class="callout good">
+      <span class="label">Kept as a negative result</span>
+      <p>The GAP head was reverted rather than shipped, but its reasoning and its numbers stay in the code as a comment, not deleted. A parameter-count argument that sounds airtight is still a hypothesis until it&rsquo;s measured against the same held-out set as everything else in this report &mdash; which is the whole methodology this write-up has been arguing for, applied one more time to a change that, this time, didn&rsquo;t work.</p>
+    </div>
+  </section>
+
+  <footer class="end">
+    Model: <code>cnn_char_reader.py</code> &middot; three Conv&ndash;BatchNorm&ndash;ReLU&ndash;MaxPool blocks (16/32/64 channels) &middot; FC 4096&rarr;128&rarr;25 &middot; Adam, cross-entropy, 40 epochs, batch 64 &middot; 211 real training photos across 25 classes.
+  </footer>
+
+</div>
