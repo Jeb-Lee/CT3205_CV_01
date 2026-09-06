@@ -36,6 +36,10 @@ yolo/           the YOLO detection comparison — reuses cnn/ code, never modifi
   yolo_dataset/             YOLO-format images/labels, train + held-out val split
   yolo_runs/cards/          the fine-tuned weights and training curves
 
+demo/           real-time webcam demonstration
+  webcam_demo.py            live boxes, class labels, confidence scores; runs
+                            either pipeline, switchable at runtime
+
 docs/one-photo-per-card.html   the write-up
 RngTest/                        three real-world test photos (not training/eval data)
 requirements.txt, requirements-yolo.txt
@@ -93,7 +97,15 @@ python cnn_char_reader.py predict path/to/photo.jpg # classify one card photo
 python scripts/build_yolo_dataset.py    # regenerate yolo_dataset/ from cnn/images
 python scripts/train_yolo.py            # fine-tune YOLOv8n from COCO weights
 python scripts/run_comparison.py        # current stack vs. YOLO vs. hybrid, side by side
+
+# Real-time demo — from demo/ (needs opencv-python)
+python webcam_demo.py                   # live webcam with boxes, labels, confidences
+python webcam_demo.py --pipeline hybrid # same, using classical detect + CNN
 ```
+
+Measured live at 640x480: **87.6 FPS** on the RTX 3050, 15.8 FPS on CPU, and
+24.2 FPS for the hybrid pipeline — all comfortably real-time. See
+[`demo/README.md`](demo/README.md) for controls and troubleshooting.
 
 ## Design notes (short version — see the write-up for the full story)
 
