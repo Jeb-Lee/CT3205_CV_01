@@ -19,3 +19,10 @@ demo/captures/
 report_build/page-*.png
 report_build/*.pdf
 report_build/unpacked/
+
+# --- YOLO regeneratable artifacts ---
+yolo/yolo_dataset/labels/*.cache
+yolo/yolo_dataset/images/train/synth_*.jpg
+yolo/yolo_dataset/labels/train/synth_*.txt
+yolo/weights/
+yolo/yolov8n.pt
