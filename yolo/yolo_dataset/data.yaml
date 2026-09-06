@@ -1,0 +1,33 @@
+path: C:\Users\jeble\PycharmProjects\CT3205_CV_01\yolo\yolo_dataset
+train: images/train
+val: images/val
+names:
+  0: 1
+  1: 2
+  2: 3
+  3: 4
+  4: 5
+  5: 6
+  6: 7
+  7: 8
+  8: 9
+  9: A
+  10: B
+  11: C
+  12: D
+  13: E
+  14: F
+  15: G
+  16: H
+  17: S
+  18: T
+  19: U
+  20: V
+  21: W
+  22: X
+  23: Y
+  24: Z
+  25: circle
+  26: left_arrow
+  27: right_arrow
+  28: up_arrow

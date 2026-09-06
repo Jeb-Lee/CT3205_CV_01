@@ -1,0 +1,5 @@
+# Extra dependency for yolo/ — install alongside requirements.txt.
+# Installing this will pull in its own torch/torchvision (CPU build) and
+# silently downgrade a CUDA install in the same environment; see the README
+# for how to restore it afterward.
+ultralytics==8.4.142
