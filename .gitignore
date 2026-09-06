@@ -14,3 +14,8 @@ Thumbs.db
 
 # --- demo output ---
 demo/captures/
+
+# --- report build outputs (regenerate with render.py) ---
+report_build/page-*.png
+report_build/*.pdf
+report_build/unpacked/
