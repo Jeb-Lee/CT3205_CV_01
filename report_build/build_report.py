@@ -217,7 +217,13 @@ def build_body(rid):
         "no detections at all, while the hand-specified geometric rule succeeded "
         "on two. The results are interpreted as a consequence of limited training "
         "diversity rather than of architecture, and an inappropriate default "
-        "augmentation setting is identified as a likely contributor.",
+        "augmentation setting is identified as a likely contributor. Live use of "
+        "the accompanying real-time demonstration surfaced a further failure—"
+        "neither pipeline reliably detects a card held in the hand rather than "
+        "resting on a table—and a synthetic scale, rotation and perspective "
+        "augmentation of the existing photographs is shown to recover the "
+        "fine-tuned detector's ability to localise such cards on most test "
+        "cases, though not yet its ability to classify them reliably.",
         style="Abstract"))
     A(para(
         "Keywords—object detection, YOLO, transfer learning, convolutional "
@@ -468,6 +474,20 @@ def build_body(rid):
         "For the classifier, every reported figure is the mean over five "
         "independent training runs with different random seeds, with the "
         "standard deviation quoted. The reason is given in Section IV-E."))
+
+    A(heading("Real-Time Demonstration", 2))
+    A(para(
+        "Both pipelines were packaged into an interactive real-time "
+        "demonstration (webcam_demo.py) to satisfy the assignment's live "
+        "demonstration requirement. It reads a live camera feed or a recorded "
+        "video, draws each detected box, its predicted class and its "
+        "confidence score on the frame, and overlays frame rate and the "
+        "active confidence threshold. Either pipeline can be selected at "
+        "start-up and swapped at run time without restarting the process, "
+        "and screenshots or short clips can be captured directly from the "
+        "running demonstration. This tool is also how the failure described "
+        "in Section VI-E was found: it surfaced during ordinary use of the "
+        "demonstration, not from a planned experiment."))
 
     # ---------------- IV. Experimental Design ----------------
     A(heading("Experimental Design"))
@@ -727,6 +747,103 @@ def build_body(rid):
         "inputs, indicates the confusions arise from what each learned rather "
         "than from an intrinsic property of the symbols."))
 
+    A(heading("Hand-Held Cards at Deployment Time", 2))
+    A(para(
+        "Live use of the real-time demonstration (Section III-D) surfaced a "
+        "failure absent from every prior test: neither pipeline reliably "
+        "detects a card held up to the camera in a hand, as opposed to one "
+        "resting on a table. Diagnosis traced this to two distinct causes "
+        "that happen to share one root."))
+    A(para(
+        "For the fine-tuned detector the cause is scale. Every training "
+        "photograph shows several cards spread on a table, each occupying "
+        "roughly 5-11% of the frame's linear dimension per side; a card held "
+        "up to a webcam typically fills 35-90% or more of the frame instead. "
+        "On real hand-held photographs the detector produced zero boxes at "
+        "every confidence threshold tested, down to 0.01—not a low-confidence "
+        "detection but no detection signal at all, which confidence-threshold "
+        "tuning cannot fix. For the classical pipeline the cause is different: "
+        "its threshold-and-connected-component stage groups shadowed skin "
+        "against the card's dark material into a single region, merging hand "
+        "and card into one blob that fails the aspect-ratio filter or passes "
+        "it with the wrong shape. A controlled test that varied the "
+        "detector's area, aspect and border parameters across four settings, "
+        "including its original unmodified defaults, reproduced this merge "
+        "identically in every case, showing it is not an artefact of "
+        "parameter tuning but a structural property of thresholding on "
+        "brightness and saturation alone. Both failures trace to the same "
+        "underlying gap: no photograph anywhere in this project's training or "
+        "evaluation data shows a card held in a hand."))
+    A(para(
+        "A targeted fix was attempted for the fine-tuned detector, since its "
+        "failure—unlike the classical detector's—is a property of what it was "
+        "shown rather than of its detection rule, and is therefore addressable "
+        "with more representative data. Seventy-two synthetic training images "
+        "were generated from the same eighteen real photographs already used: "
+        "each is a crop centred on one existing annotated card, resized so the "
+        "card fills 35-80% of the new frame, rotated in-plane by up to thirty "
+        "degrees, and warped by a small random projective transform to "
+        "approximate an off-axis viewing angle. Every box's label, including "
+        "for cards other than the one a crop was centred on, was re-derived "
+        "by mapping its corners through the same transform and taking their "
+        "axis-aligned bounding box, rather than re-annotated by hand. No new "
+        "photography was involved."))
+    A(table(
+        [["Measure", "Baseline", "Scale+tilt"],
+         ["Held-out recall", "84.7%", "100%"],
+         ["Held-out cls. given det.", "90.2%", "100%"],
+         ["Hand-held photos, any detection", "0 / 6", "5 / 6"],
+         ["Hand-held photos, correctly classified", "0 / 6", "2 / 6"]],
+        [150, 45, 45],
+        caption="Detector performance before and after scale+tilt "
+                "augmentation, on the original held-out split and on six "
+                "real hand-held photographs. Single run for each "
+                "configuration; see Section VII-C."))
+    A(para(
+        "Retraining on the enlarged set left held-out performance unchanged "
+        "or improved—recall and classification-given-detection both reached "
+        "100% on the original nine-photograph split, though a jump this size "
+        "on a 72-instance set from a single run should be read cautiously, "
+        "consistent with this report's treatment of small-sample single-run "
+        "figures elsewhere. On the six real hand-held photographs, where the "
+        "baseline produced no detections whatsoever, the retrained detector "
+        "produced a detection on five, two of which were also correctly "
+        "classified, one at a confidence above the demonstration's default "
+        "threshold. This is a genuine but partial result: three of the five "
+        "detections were misclassified, and the underlying scale gap is "
+        "narrowed rather than eliminated."))
+    A(para(
+        "One further attempt is reported because it failed instructively. "
+        "Section V-B's pipeline comparison shows the from-scratch classifier "
+        "reading correctly-detected symbols more accurately than YOLO's own "
+        "head, so pairing the retrained detector's localisation with that "
+        "classifier seemed a natural way to combine the fix above with the "
+        "project's more accurate classifier. On three sampled hand-held "
+        "photographs it did the opposite: none were correctly classified, "
+        "against two of three for the detector's own head, and the wrong "
+        "answers carried higher confidence, up to 0.99, than the correct "
+        "answers they replaced. The cause is that the retrained detector's "
+        "hand-held boxes, while real, are imprecise—one measured 1226 by 671 "
+        "pixels on a roughly 1280 by 720 frame, closer to \"somewhere in this "
+        "image\" than a tight box—and the classifier's convex-hull "
+        "segmentation stage requires a tight single-card crop to locate the "
+        "correct region. A loose box causes it to segment confidently and "
+        "wrongly, an instance of the same confident-misclassification pattern "
+        "as the flash case in Section VI-A, now triggered by an imprecise box "
+        "rather than an imprecise photograph. The demonstration therefore "
+        "uses the retrained detector's own classification, despite it being "
+        "the less accurate classifier everywhere else in this project."))
+    A(para(
+        "This episode is a sharper version of the argument developed in "
+        "Section VII-B: a detector shown insufficient training diversity does "
+        "not merely perform worse, it can fail completely, and synthetic "
+        "diversity constructed from data already on hand recovers a real "
+        "fraction of that capability without any architectural change. It "
+        "also shows the limit of that argument: recovering detection did not "
+        "recover classification, and the classical detector's hand-shadow "
+        "merge, being a property of a hand-specified rule rather than of "
+        "training data, is not addressable by this kind of fix at all."))
+
     # ---------------- VII. Discussion ----------------
     A(heading("Discussion"))
 
@@ -779,10 +896,13 @@ def build_body(rid):
 
     A(heading("Limitations", 2))
     A(para(
-        "Several limitations should be stated plainly. Only one detector "
-        "training run was performed, so the detector figures are single-run and, "
-        "by this report's own argument, should be treated with the caution "
-        "applied to the classifier's single-run numbers. The detector "
+        "Several limitations should be stated plainly. Only one training run "
+        "was performed per detector configuration reported, baseline and "
+        "scale+tilt augmented alike, so the detector figures are single-run "
+        "and, by this report's own argument, should be treated with the "
+        "caution applied to the classifier's single-run numbers—the jump to "
+        "100% held-out recall and classification in Section VI-E is the "
+        "figure most in need of that caution. The detector "
         "experiments are consequently thinner than the classifier experiments: "
         "the data-volume, duration and architecture experiments were conducted on "
         "the classifier, and equivalents for the detector remain to be run. The "
@@ -803,7 +923,14 @@ def build_body(rid):
         "or a promptable model such as Segment Anything [5], which would not "
         "depend on the dark-background assumption that the flash case defeats. "
         "Fourth, run the detector across seeds so its figures carry the same "
-        "reliability as the classifier's."))
+        "reliability as the classifier's. Fifth, address the two remaining "
+        "gaps from Section VI-E directly: constrain the scale+tilt "
+        "augmentation to also produce tighter boxes on largely-empty "
+        "backgrounds, since loose boxes are what currently rules out pairing "
+        "it with the more accurate classifier, and address the classical "
+        "detector's hand-shadow merge at the segmentation stage itself, for "
+        "example by excluding skin-tone pixels before thresholding, since no "
+        "amount of additional training data can fix a hand-specified rule."))
 
     # ---------------- VIII. Conclusion ----------------
     A(heading("Conclusion"))
@@ -829,6 +956,20 @@ def build_body(rid):
         "images can silently corrupt labels for symbol data. Each of these cost "
         "more to learn than the accuracy figures did, and each generalises "
         "further."))
+    A(para(
+        "A final, unplanned test reinforced the same argument from a different "
+        "angle. Live use of the real-time demonstration showed both pipelines "
+        "fail to detect a card held in the hand rather than resting on a table, "
+        "for two different low-level reasons that shared one root cause: no "
+        "training or evaluation photograph in this project showed a hand-held "
+        "card. A purely data-side fix—synthetic scale, rotation and perspective "
+        "augmentation of photographs already collected, with no new "
+        "photography—recovered detection on most hand-held test cases where "
+        "none existed before, but did not recover reliable classification, and "
+        "revealed that a detector's own imprecise localisation can defeat a "
+        "more accurate classifier downstream of it. Both outcomes are further "
+        "evidence for this report's central claim, that data diversity rather "
+        "than architecture was the binding constraint throughout."))
 
     # ---------------- AI declaration ----------------
     A(heading("AI Usage Declaration"))
@@ -842,10 +983,17 @@ def build_body(rid):
         "What it was used for: assistance in writing and debugging Python code "
         "for the segmentation pipeline, the classifier, the dataset-preparation "
         "and annotation-verification scripts, the YOLO training and evaluation "
-        "scripts, and the evaluation harness; assistance in diagnosing failures, "
-        "including the tilted-card and edge-touching segmentation defects and the "
-        "corrupted training crops; discussion of experimental design and of how "
-        "to report results honestly; and drafting assistance for this report."))
+        "scripts, the real-time demonstration, and the evaluation harness; "
+        "assistance in diagnosing failures, including the tilted-card and "
+        "edge-touching segmentation defects, the corrupted training crops, and "
+        "the hand-held card detection failure described in Section VI-E, "
+        "traced through live testing of the real-time demonstration to two "
+        "distinct causes; implementation of a synthetic scale, rotation and "
+        "perspective augmentation to address one of them; discussion of "
+        "experimental design and of how to report results honestly, including "
+        "the decision to report the unsuccessful detector-plus-classifier "
+        "combination in Section VI-E rather than omit it; and drafting "
+        "assistance for this report."))
     A(para(
         "Which parts were AI-assisted: the majority of the source code was "
         "written with AI assistance. The experimental direction, the decisions "
