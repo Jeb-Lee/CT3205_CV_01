@@ -16,10 +16,20 @@ Two pipelines are selectable:
 Both are the systems compared in the report; running them side by side on a
 live feed is the most direct way to see the difference discussed there.
 
+`--pipeline yolo --scale-tilt` swaps in a second fine-tune
+(yolo/yolo_runs/cards_scaletilt) trained with extra synthetic scale/
+rotation/perspective augmentation so it can actually produce a detection on
+a hand-held card -- something the report's original baseline weights cannot
+do at all (zero boxes at any confidence). It isn't a strict improvement:
+its own classification is a little less reliable than the baseline's on the
+flat-photo case the report measures. See yolo/scripts/eval_scaletilt.py and
+demo/README.md's "Hold the card flat, not up" section.
+
 Examples
 --------
     python webcam_demo.py                          # webcam, YOLO
     python webcam_demo.py --pipeline hybrid        # webcam, classical + CNN
+    python webcam_demo.py --scale-tilt             # webcam, hand-held-capable YOLO
     python webcam_demo.py --source clip.mp4        # from a video file
     python webcam_demo.py --source photo.jpg       # single image
     python webcam_demo.py --headless --source photo.jpg --output out.jpg
@@ -48,6 +58,15 @@ sys.path.insert(0, CNN_DIR)
 sys.path.insert(0, os.path.join(CNN_DIR, "scripts"))
 
 DEFAULT_WEIGHTS = os.path.join(REPO, "yolo", "yolo_runs", "cards", "weights", "best.pt")
+# The scale+tilt fine-tune (see yolo/scripts/augment_scale_tilt.py) -- trained
+# on synthetic zoomed/rotated/perspective-warped crops of the same 18 source
+# photos so it has actually seen a card at hand-held scale and angle, and is
+# the only YOLO checkpoint in this project that produces any detection at
+# all on a hand-held card. Opt into it with --scale-tilt; the plain "yolo"
+# pipeline defaults to the original baseline so it matches the report's
+# numbers out of the box. Its own classification is a little less reliable
+# on the flat-photo case the report measures -- see eval_scaletilt.py.
+SCALETILT_WEIGHTS = os.path.join(REPO, "yolo", "yolo_runs", "cards_scaletilt", "weights", "best.pt")
 CAPTURES = os.path.join(HERE, "captures")
 
 # Distinct BGR colours, cycled per class id.
@@ -249,7 +268,8 @@ def open_source(source, cap_width=None, cap_height=None):
 
 def build_pipeline(kind, args):
     if kind == "yolo":
-        return YoloPipeline(args.weights, args.device, args.imgsz)
+        weights = SCALETILT_WEIGHTS if args.scale_tilt else args.weights
+        return YoloPipeline(weights, args.device, args.imgsz)
     return HybridPipeline(args.device, loose=args.loose)
 
 
@@ -260,7 +280,21 @@ def main():
     ap.add_argument("--source", default="0",
                     help="camera index (default 0), or path to an image/video")
     ap.add_argument("--pipeline", choices=["yolo", "hybrid"], default="yolo")
-    ap.add_argument("--weights", default=DEFAULT_WEIGHTS)
+    ap.add_argument("--weights", default=DEFAULT_WEIGHTS,
+                    help="weights for --pipeline yolo (the original baseline "
+                         "fine-tune, matching the report's numbers); "
+                         "overridden by --scale-tilt")
+    ap.add_argument("--scale-tilt", action="store_true",
+                    help="pipeline yolo only: use the scale+tilt-augmented "
+                         "fine-tune (yolo_runs/cards_scaletilt) instead of "
+                         "--weights. The only YOLO checkpoint here that "
+                         "produces a detection at all on a hand-held card "
+                         "(the baseline returns zero boxes at any confidence "
+                         "-- see yolo/scripts/eval_scaletilt.py). Its own "
+                         "classification is a little less reliable than the "
+                         "baseline's on the flat-photo case the report "
+                         "measures, so this isn't a strict upgrade -- try it "
+                         "specifically when holding a card up to the camera.")
     ap.add_argument("--conf", type=float, default=0.15,
                     help="lower = more forgiving (more, shakier detections). "
                          "Adjustable live with +/-. Default lowered from "
@@ -299,11 +333,16 @@ def main():
         except Exception:
             args.device = "cpu"
 
-    if args.pipeline == "yolo" and not os.path.isfile(args.weights):
-        raise SystemExit(
-            f"Weights not found: {args.weights}\n"
-            f"Train the detector first (yolo/scripts/train_yolo.py) or pass --weights."
-        )
+    if args.pipeline == "yolo":
+        effective_weights = SCALETILT_WEIGHTS if args.scale_tilt else args.weights
+        if not os.path.isfile(effective_weights):
+            hint = (
+                "Train it first: yolo/scripts/augment_scale_tilt.py then "
+                "yolo/scripts/train_yolo.py --name cards_scaletilt"
+                if args.scale_tilt else
+                "Train the detector first (yolo/scripts/train_yolo.py) or pass --weights."
+            )
+            raise SystemExit(f"Weights not found: {effective_weights}\n{hint}")
 
     print(f"Loading pipeline '{args.pipeline}' on device '{args.device}' ...")
     pipe = build_pipeline(args.pipeline, args)

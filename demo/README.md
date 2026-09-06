@@ -84,6 +84,42 @@ camera instead of holding it up.** That matches the conditions both models
 were actually trained/tuned on, and is what the report's own measurements
 are based on.
 
+### A partial fix for YOLO: `--scale-tilt`
+
+`yolo/scripts/augment_scale_tilt.py` manufactures synthetic training
+examples from the same 18 real photos -- zoomed crops around a card sized
+to fill 35-80% of frame, rotated in-plane, and warped with a small
+perspective transform -- so the detector actually sees something at
+hand-held scale and angle during training. Fine-tuning on this augmented
+set (`yolo_runs/cards_scaletilt`) produces a real, measured improvement:
+
+```bash
+python webcam_demo.py --pipeline yolo --scale-tilt
+```
+
+On the held-out val set (flat-on-table, same distribution as training) it
+matches or exceeds the baseline. On real hand-held test photos, where the
+baseline produced **zero boxes at any confidence down to 0.01**, this
+checkpoint produces an actual detection on most of them, including some
+fully correct (right class, above the demo's default confidence threshold)
+-- see `yolo/scripts/eval_scaletilt.py` for the exact numbers.
+
+It is **not a strict upgrade** -- treat it as an experiment, not a
+replacement: its own classification is a little less reliable than the
+baseline's on the flat-photo case the report measures, and even on
+hand-held photos several detections are real (a box exists) but
+misclassified. We also tried pairing this detector with the CNN classifier
+(the same combination `run_comparison.py` already validates on the held-out
+set) specifically for hand-held cards, and it made things *worse*, not
+better: the detector's boxes on hand-held photos are real but loose (one
+was 1226x671 on a ~1280x720 frame -- "somewhere in this image", not a tight
+box), and the classical `extract_card_mask()` the CNN depends on needs a
+tight single-card crop to segment correctly. Feed it a loose box and it
+segments the wrong region confidently -- a worse failure than YOLO's own,
+less certain but more often right, classification. So `--scale-tilt` uses
+YOLO's own classification head, not the CNN's, despite the CNN being the
+more accurate classifier in every other context in this project.
+
 The hybrid pipeline's detector defaults to the same strict area/aspect/
 border-margin bounds the training data was built with (`--loose` opts into
 wider bounds instead). We tested loosening them as a first response to
