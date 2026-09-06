@@ -25,6 +25,7 @@ on a 72-example held-out test set of photos never used in training.
 | `cnn_char_reader.py` | The model: segmentation (photo → binary glyph mask), augmentation, `CharCNN`, training loop, `predict()` |
 | `images/img1.jpg`–`img25.jpg` | The original one-photo-per-class templates |
 | `images/extra/`, `images/extra2/` | Additional real photos added across two later shoots |
+| `images/Image1.jpeg`–`Image3.jpeg` | The three source photos the write-up's independent test crops come from (never used in training) |
 | `images/manifest.json` | `{relative path: character label}` for every training photo actually used |
 | `char_cnn_model.pt`, `char_cnn_labels.json` | The trained model weights and its class list |
 | `scripts/detect_cards.py` | Finds every card in a multi-card photo (reuses the same segmentation as `cnn_char_reader.py`), for labeling new photos |
