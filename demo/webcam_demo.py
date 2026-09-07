@@ -37,10 +37,18 @@ Examples
 Keys (interactive mode)
 -----------------------
     q / Esc   quit
-    s         save a screenshot to captures/
+    s         save a screenshot to captures/ (with boxes/labels/HUD drawn on)
+    c         save a "clean" screenshot to captures/ -- no overlay, safe to
+              reuse as future training data (see s vs. c note below)
     r         start / stop recording to captures/
     + / -     raise / lower the confidence threshold
     p         switch pipeline (yolo <-> hybrid)
+
+s vs. c: 's' burns the detected box, label and HUD into the saved pixels --
+good for showing the demo working, useless (actively misleading) as training
+data, since a model would learn to key off the drawn box. 'c' saves the same
+frame before any of that is drawn, precisely so it can be relabelled and fed
+back into training later.
 """
 import argparse
 import os
@@ -371,13 +379,19 @@ def main():
             elapsed = time.time() - t0
             fps_hist.append(1.0 / elapsed if elapsed > 0 else 0.0)
 
+            # draw_detections/draw_hud draw directly onto `frame` -- keep an
+            # undrawn copy for 'c' (clean capture) before that happens, so
+            # anything saved for future training data isn't burned in with a
+            # box/label/HUD the model would otherwise learn to key off of.
+            clean_frame = frame.copy()
+
             draw_detections(frame, dets)
             draw_hud(frame, [
                 f"{pipe.name}",
                 f"device: {args.device}    {np.mean(fps_hist):.1f} FPS "
                 f"({elapsed*1000:.0f} ms/frame)",
                 f"conf threshold: {conf:.2f}    detections: {len(dets)}",
-                "q quit | s shot | r rec | +/- conf | p pipeline",
+                "q quit | s shot | c clean | r rec | +/- conf | p pipeline",
             ], recording)
 
             frames += 1
@@ -409,6 +423,11 @@ def main():
                 path = os.path.join(CAPTURES, time.strftime("shot_%Y%m%d_%H%M%S.jpg"))
                 cv2.imwrite(path, frame)
                 print(f"saved {path}")
+            elif key == ord("c"):
+                path = os.path.join(CAPTURES, time.strftime("clean_%Y%m%d_%H%M%S.jpg"))
+                cv2.imwrite(path, clean_frame)
+                print(f"saved {path} (no box/label/HUD -- usable as future "
+                      f"training data)")
             elif key == ord("r"):
                 if recording:
                     recording = False

@@ -29,7 +29,8 @@ don't always grant the exact size asked for.
 | Key | Action |
 | --- | --- |
 | `q` / `Esc` | quit |
-| `s` | save a screenshot to `captures/` |
+| `s` | save a screenshot to `captures/`, boxes/labels/HUD drawn on |
+| `c` | save a **clean** screenshot (no overlay) -- use this, not `s`, for anything you might later add to a training set |
 | `r` | start / stop recording video to `captures/` |
 | `+` / `-` | raise / lower the confidence threshold |
 | `p` | switch pipeline (YOLO ↔ hybrid) live |
