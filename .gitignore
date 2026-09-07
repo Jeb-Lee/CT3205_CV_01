@@ -24,5 +24,11 @@ report_build/unpacked/
 yolo/yolo_dataset/labels/*.cache
 yolo/yolo_dataset/images/train/synth_*.jpg
 yolo/yolo_dataset/labels/train/synth_*.txt
+yolo/yolo_dataset/images/train/solo_*.jpg
+yolo/yolo_dataset/labels/train/solo_*.txt
+yolo/yolo_dataset/images/train/webcam_*.jpg
+yolo/yolo_dataset/labels/train/webcam_*.txt
+yolo/yolo_dataset/allreal_train.txt
 yolo/weights/
 yolo/yolov8n.pt
+yolo/_preview_webcam_*.jpg

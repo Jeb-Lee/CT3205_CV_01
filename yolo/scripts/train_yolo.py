@@ -14,11 +14,16 @@ if __name__ == "__main__":
                           "to keep that run's weights/curves intact when "
                           "training a variant, e.g. on an augmented dataset)")
     ap.add_argument("--epochs", type=int, default=150)
+    ap.add_argument("--data", default=DATA_YAML,
+                     help="path to a data.yaml (default: the original "
+                          "18-photo dataset). Pass a variant, e.g. "
+                          "yolo_dataset/data_allreal.yaml, to train on a "
+                          "different image set without touching the default.")
     args = ap.parse_args()
 
     model = YOLO("yolov8n.pt")  # COCO-pretrained nano checkpoint
     model.train(
-        data=DATA_YAML,
+        data=args.data,
         epochs=args.epochs,
         imgsz=640,
         batch=8,
