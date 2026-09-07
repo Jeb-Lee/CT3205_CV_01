@@ -223,12 +223,32 @@ def build_body(rid):
         "resting on a table—and a synthetic scale, rotation and perspective "
         "augmentation of the existing photographs is shown to recover the "
         "fine-tuned detector's ability to localise such cards on most test "
-        "cases, though not yet its ability to classify them reliably.",
+        "cases, though not yet its ability to classify them reliably. A second "
+        "round of testing finds a sharper fix for the same class of problem: "
+        "re-training the detector on the 211 individually-cropped real "
+        "photographs already used by the comparison classifier—material the "
+        "detector had never seen, despite being drawn from the identical "
+        "source photographs—raises correct real-world detection-and-"
+        "classification from 1 of 8 to 7 of 8 sampled hand-held and "
+        "novel-background test photographs, exceeding a synthetic-augmentation "
+        "variant of the same experiment (2 of 8) without cost to held-out "
+        "performance. This same round of live testing also finds that only "
+        "the detector, never the comparison classifier, is able to recognise "
+        "the dataset's pictographic symbols at all, and surfaces further, "
+        "still-unconfirmed evidence for the augmentation hypothesis above.",
         style="Abstract"))
     A(para(
         "Keywords—object detection, YOLO, transfer learning, convolutional "
         "neural networks, symbol recognition, data augmentation, failure analysis",
         style="Keywords"))
+    A(para(runs=[
+        ("Revision 2 note: ", {"b": True}),
+        ("this revision adds a further dataset experiment for the detector "
+         "(Sections III-E, V-F) and a second round of real-time testing "
+         "(Section VI-F), with corresponding updates to the Discussion, "
+         "Conclusion and AI Usage Declaration. Material from the original "
+         "submission is otherwise unchanged.", {"i": True}),
+    ]))
 
     # ---------------- I. Introduction ----------------
     A(heading("Introduction"))
@@ -489,6 +509,43 @@ def build_body(rid):
         "in Section VI-E was found: it surfaced during ordinary use of the "
         "demonstration, not from a planned experiment."))
 
+    A(heading("Real-Photo Diversity for the Detector", 2))
+    A(para(
+        "Section VI-E's synthetic augmentation fixed part of the hand-held "
+        "failure by manufacturing scale and angle variety from the same "
+        "eighteen source photographs. A separate question is whether the "
+        "detector benefits from real photographic diversity it has simply "
+        "never been shown—specifically, the 211 individually-cropped card "
+        "photographs the comparison classifier already trains on (Section "
+        "II-E), built from the identical three photography sessions but "
+        "never previously reformatted for detection. Each crop shows one "
+        "card generously padded against its background, so it fills a much "
+        "larger fraction of frame than any instance in the eighteen "
+        "whole-photo training images; unlike the synthetic crops, the "
+        "lighting, shadow and framing in each is genuinely distinct, not "
+        "re-derived from the same pixels."))
+    A(para(
+        "Converting these into detection training data is not a direct "
+        "relabelling, because several of them still show a sliver of a "
+        "neighbouring card in the padding margin. Each crop is re-processed "
+        "with the same classical detector used elsewhere in this project, "
+        "with its area and aspect bounds widened to suit a single "
+        "frame-filling card rather than a busy multi-card photograph; the "
+        "largest detected region is kept as the card regardless of whether a "
+        "second, smaller region is also found—inspection showed these "
+        "secondary regions are usually a glyph's own enclosed loop (as in D, "
+        "G, 6 or 9) registering as a separate dark island under the same "
+        "threshold, not a second card—and the crop is re-cut tightly around "
+        "that region so any genuine neighbour is excluded rather than left "
+        "in frame and unlabelled. All 211 crops converted successfully by "
+        "this method, verified by re-rendering a sample of the results with "
+        "their boxes drawn on. Combined with the original eighteen "
+        "whole-photo images, this yields 229 real training images—still "
+        "using the same nine held-out photographs for validation as every "
+        "other detector variant in this report—fine-tuned from the same "
+        "COCO-pretrained checkpoint under an otherwise identical "
+        "configuration to the baseline."))
+
     # ---------------- IV. Experimental Design ----------------
     A(heading("Experimental Design"))
     A(para(
@@ -671,6 +728,53 @@ def build_body(rid):
         "classifier figure in this report is therefore a five-seed mean, and "
         "single-run numbers are not treated as evidence."))
 
+    A(heading("Effect of Real Photographic Diversity on the Detector", 2))
+    A(table(
+        [["Measure", "Baseline", "Scale+tilt", "All-real"],
+         ["Held-out recall", "84.7%", "100%", "98.6%"],
+         ["Held-out cls. given det.", "90.2%", "100%", "98.6%"],
+         ["Held-out overall", "76.4%", "100%", "97.2%"]],
+        [90, 50, 50, 50],
+        caption="Held-out performance of the baseline detector against "
+                "the two data-diversity variants (Section III-E and Section "
+                "VI-E). All three use the identical nine-photograph "
+                "validation split."))
+    A(table(
+        [["Measure", "Baseline", "Scale+tilt", "All-real"],
+         ["Sampled real-world photos correct", "1 / 8", "2 / 8", "7 / 8"],
+         ["Confidence on a correct hit", "0.40", "0.26-0.42", "0.41-0.98"]],
+        [90, 50, 50, 50],
+        caption="Detection-and-classification correctness on eight sampled "
+                "real-world photographs (six hand-held, two on a novel "
+                "background—see Section VI-F), at the demonstration's "
+                "default 0.25 confidence threshold. Single run for each "
+                "configuration; see Section VII-C."))
+    A(para(
+        "The all-real variant matches the scale+tilt variant's near-perfect "
+        "held-out performance—one miss, S misread as 3, against the "
+        "earlier variant's zero—while using a comparable number of "
+        "training images (229 against ninety) and none of it synthetically. "
+        "On the real-world sample the difference is not incremental. Two "
+        "hand-held V-card photographs that the scale+tilt detector barely "
+        "registered (confidence 0.23 and 0.26, one misclassified) are read "
+        "by the all-real detector at 0.98 each; a novel-background A-card "
+        "photograph goes from a wrong guess (baseline) to 0.42 (scale+tilt) "
+        "to 0.96 (all-real). The one miss at the default threshold, a G-card "
+        "photograph, still recovers correctly at a slightly lower threshold "
+        "(0.22 at confidence 0.1)."))
+    A(para(
+        "The comparison between the two diversity variants is informative "
+        "beyond the headline numbers. Both add real photographic material "
+        "from the same three sessions; the difference is that scale+tilt "
+        "re-derives synthetic examples from eighteen source images by "
+        "geometric transform, while all-real supplies 211 genuinely distinct "
+        "real photographs, each with its own lighting and shadow. That the "
+        "latter generalises further, at a comparable training-set size, is "
+        "evidence that a fixed pool of source pixels stretched further by "
+        "synthesis is not a full substitute for additional real capture—"
+        "consistent with the caution already given for the augmentation "
+        "hypothesis in Section VII-A, and revisited in Section VII-B."))
+
     # ---------------- VI. Challenging scenarios ----------------
     A(heading("Challenging Scenarios"))
     A(para(
@@ -844,6 +948,48 @@ def build_body(rid):
         "merge, being a property of a hand-specified rule rather than of "
         "training data, is not addressable by this kind of fix at all."))
 
+    A(heading("A Second Round of Real-Time Testing", 2))
+    A(para(
+        "Further live use of the demonstration, after the all-real detector "
+        "of Section III-E was trained, tested two more conditions the static "
+        "held-out set does not exercise: a card placed on a background never "
+        "seen in training, and the four pictographic classes that the "
+        "comparison classifier cannot represent at all."))
+    A(para(
+        "A card was stuck to a plain whiteboard—a background absent from "
+        "every training and evaluation photograph, distinct from the "
+        "hand-held scale problem in Section VI-E since the card itself sat "
+        "flat and roughly frame-filling as in training. The baseline "
+        "detector produced a wrong label at low confidence; the all-real "
+        "detector produced the correct label at confidence 0.96—consistent "
+        "with the finding in Section V-F that this variant's improvement "
+        "extends beyond hand-held scale specifically to backgrounds absent "
+        "from the whole-photo training images."))
+    A(para(
+        "The comparison classifier has no output classes for the circle or "
+        "the three arrow symbols; those four classes exist only in the "
+        "detector's own vocabulary (Section II-A), so the fine-tuned "
+        "detector is the only system in this report capable of recognising "
+        "them under any condition, and the all-real variant did so live for "
+        "the circle and both non-mirrored arrows. The right-pointing arrow "
+        "was visibly weaker. This is notable because it is not a data-volume "
+        "effect in the usual sense: the all-real training set contains eight "
+        "instances of right_arrow against six of left_arrow, so the weaker "
+        "class has more, not fewer, examples. That rules out scarcity and "
+        "points instead at the augmentation hypothesis from Section VII-A, "
+        "confirmed still active in this run's configuration (fliplr: 0.5, "
+        "unchanged from the baseline). Left_arrow and right_arrow are the "
+        "only pair of classes in this dataset that are exact mirror images "
+        "of one another, so the label corruption that hypothesis describes—"
+        "a flipped image keeps its pre-flip label—turns roughly half the "
+        "training signal for each of these two classes specifically into a "
+        "contradiction of the other, while leaving the rotationally "
+        "symmetric circle and the up-pointing arrow largely unaffected. This "
+        "is consistent with, but does not on its own confirm, the "
+        "hypothesis: it remains, as in Section VII-A, an inference from "
+        "inspection rather than a controlled ablation, since fliplr has "
+        "still not been disabled and re-measured."))
+
     # ---------------- VII. Discussion ----------------
     A(heading("Discussion"))
 
@@ -871,6 +1017,19 @@ def build_body(rid):
         "flipping disabled is the single most immediate next experiment, and it "
         "is expected to improve both the arrow classes and overall "
         "classification."))
+    A(para(
+        "Section VI-F adds supporting, still non-ablated, evidence rather "
+        "than a confirmation. Right_arrow performed visibly worse than the "
+        "dataset's other pictographic classes in a second round of live "
+        "testing, despite having more training instances than left_arrow "
+        "(eight against six), which rules out the ordinary data-scarcity "
+        "explanation and points back at this same augmentation. Left_arrow "
+        "and right_arrow are the only mirror-image pair in the dataset, so "
+        "they are exactly the pair this hypothesis predicts should suffer "
+        "most, and no other explanation for that specific asymmetry was "
+        "identified. The hypothesis therefore remains open but is now better "
+        "motivated; the fliplr ablation described above has still not been "
+        "run."))
 
     A(heading("Data Volume Against Model Capacity", 2))
     A(para(
@@ -893,16 +1052,30 @@ def build_body(rid):
         "cases is the same and is cheap here: roughly forty already-captured "
         "photographs remain unused, and adding them to the detector's training "
         "set requires no new photography."))
+    A(para(
+        "Section V-F's real-photo-diversity experiment is the sharpest "
+        "confirmation of this argument in the report. It changes no "
+        "architecture, no hyperparameter and no held-out split—only what the "
+        "detector is shown—and moves real-world correctness from one "
+        "sampled photograph in eight to seven, a larger effect than any "
+        "architectural change attempted anywhere in this work, including the "
+        "global-average-pooling experiment above. It also refines the "
+        "diversity argument: the same experiment run synthetically (Section "
+        "VI-E) achieved less than half the improvement from a similarly "
+        "sized training set, suggesting the relevant quantity is not merely "
+        "how many training images exist but how much genuinely new visual "
+        "information they carry."))
 
     A(heading("Limitations", 2))
     A(para(
         "Several limitations should be stated plainly. Only one training run "
-        "was performed per detector configuration reported, baseline and "
-        "scale+tilt augmented alike, so the detector figures are single-run "
-        "and, by this report's own argument, should be treated with the "
-        "caution applied to the classifier's single-run numbers—the jump to "
-        "100% held-out recall and classification in Section VI-E is the "
-        "figure most in need of that caution. The detector "
+        "was performed per detector configuration reported—baseline, "
+        "scale+tilt and all-real alike—so the detector figures are "
+        "single-run and, by this report's own argument, should be treated "
+        "with the caution applied to the classifier's single-run numbers; "
+        "the near-100% held-out figures in Sections VI-E and V-F are those "
+        "most in need of it, and the eight-photograph real-world sample in "
+        "Section V-F is smaller still. The detector "
         "experiments are consequently thinner than the classifier experiments: "
         "the data-volume, duration and architecture experiments were conducted on "
         "the classifier, and equivalents for the detector remain to be run. The "
@@ -931,6 +1104,24 @@ def build_body(rid):
         "detector's hand-shadow merge at the segmentation stage itself, for "
         "example by excluding skin-tone pixels before thresholding, since no "
         "amount of additional training data can fix a hand-specified rule."))
+    A(para(
+        "Two further directions follow from Sections V-F and VI-F. Sixth, "
+        "run the fliplr ablation now more strongly motivated by the "
+        "instance-count evidence in Section VII-A—the arrow-class asymmetry "
+        "predicted by that hypothesis was observed, but a controlled "
+        "before-and-after comparison has still not been made. Seventh, "
+        "extend the all-real approach with real rather than synthetic "
+        "hand-held examples: a video-extraction tool has been built that "
+        "samples frames from an unedited webcam recording of a card moved "
+        "through the frame at varying scale and angle, rejects blurred "
+        "frames, and auto-labels the remainder with the same classical "
+        "detector used throughout this report, skipping any frame it cannot "
+        "label confidently rather than guessing. This is a direct extension "
+        "of the Section V-F result—if real photographic diversity from "
+        "static photographs closed most of the hand-held gap, real "
+        "diversity captured on the actual deployment camera, at the actual "
+        "deployment scale, should close more of it—but the tool has not yet "
+        "been run against real footage, and this remains untested."))
 
     # ---------------- VIII. Conclusion ----------------
     A(heading("Conclusion"))
@@ -970,6 +1161,26 @@ def build_body(rid):
         "more accurate classifier downstream of it. Both outcomes are further "
         "evidence for this report's central claim, that data diversity rather "
         "than architecture was the binding constraint throughout."))
+    A(para(
+        "A second round of testing sharpened that claim further. Re-training "
+        "the detector on 211 real card photographs already collected for the "
+        "comparison classifier, but never previously shown to the detector, "
+        "raised correct real-world detection-and-classification from one "
+        "sampled photograph in eight to seven, exceeding the synthetic-"
+        "augmentation variant's two, while matching its near-perfect "
+        "held-out performance. The same round of live testing found that "
+        "only the fine-tuned detector, never the comparison classifier, "
+        "could recognise the dataset's pictographic classes at all—a "
+        "consequence of what each system was built to represent, not of "
+        "which performed better—and surfaced further, still unconfirmed, "
+        "evidence for the augmentation hypothesis in Section VII-A: the "
+        "one class pair in this dataset that hypothesis predicts should be "
+        "confused with each other performed worse than the rest, despite "
+        "having more training examples, not fewer. Taken together with the "
+        "rest of this report, the pattern is consistent throughout: every "
+        "improvement came from showing the model more or better data, and "
+        "every remaining gap is one a controlled experiment has not yet been "
+        "run to close."))
 
     # ---------------- AI declaration ----------------
     A(heading("AI Usage Declaration"))
@@ -989,11 +1200,17 @@ def build_body(rid):
         "the hand-held card detection failure described in Section VI-E, "
         "traced through live testing of the real-time demonstration to two "
         "distinct causes; implementation of a synthetic scale, rotation and "
-        "perspective augmentation to address one of them; discussion of "
-        "experimental design and of how to report results honestly, including "
-        "the decision to report the unsuccessful detector-plus-classifier "
-        "combination in Section VI-E rather than omit it; and drafting "
-        "assistance for this report."))
+        "perspective augmentation to address one of them; implementation of "
+        "the real-photo-diversity dataset conversion and detector variant "
+        "described in Section III-E, and of the not-yet-exercised "
+        "webcam-video extraction tool described in Section VII-D; "
+        "diagnosis of the arrow-class result in Section VI-F, including "
+        "checking the training configuration and per-class instance counts "
+        "against the augmentation hypothesis rather than asserting it from "
+        "the observation alone; discussion of experimental design and of "
+        "how to report results honestly, including the decision to report "
+        "the unsuccessful detector-plus-classifier combination in Section "
+        "VI-E rather than omit it; and drafting assistance for this report."))
     A(para(
         "Which parts were AI-assisted: the majority of the source code was "
         "written with AI assistance. The experimental direction, the decisions "
