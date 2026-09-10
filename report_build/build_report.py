@@ -235,19 +235,29 @@ def build_body(rid):
         "performance. This same round of live testing also finds that only "
         "the detector, never the comparison classifier, is able to recognise "
         "the dataset's pictographic symbols at all, and surfaces further, "
-        "still-unconfirmed evidence for the augmentation hypothesis above.",
+        "still-unconfirmed evidence for the augmentation hypothesis above. A "
+        "third round closes the loop on the deployment gap directly: capturing "
+        "training data in the deployment condition itself—cards held in the "
+        "hand, filmed on the demonstration webcam and extracted frame by "
+        "frame—raises real-world correctness to 8 of 8, repairs the last "
+        "remaining weak class from the previous round, and reaches mAP@0.5 of "
+        "0.988 while extending the system to a thirtieth class. Across all "
+        "three rounds not one architectural change was made: every gain came "
+        "from what the detector was shown.",
         style="Abstract"))
     A(para(
         "Keywords—object detection, YOLO, transfer learning, convolutional "
         "neural networks, symbol recognition, data augmentation, failure analysis",
         style="Keywords"))
     A(para(runs=[
-        ("Revision 2 note: ", {"b": True}),
-        ("this revision adds a further dataset experiment for the detector "
-         "(Sections III-E, V-F) and a second round of real-time testing "
-         "(Section VI-F), with corresponding updates to the Discussion, "
-         "Conclusion and AI Usage Declaration. Material from the original "
-         "submission is otherwise unchanged.", {"i": True}),
+        ("Revision 3 note: ", {"b": True}),
+        ("revision 2 added a dataset experiment for the detector (Sections "
+         "III-E, V-F) and a second round of real-time testing (Section VI-F). "
+         "This revision adds deployment-condition data capture (Section "
+         "III-F), its results (Section V-G), and links to the demonstration "
+         "video and source repository (Section I), with corresponding updates "
+         "to the Discussion, Conclusion and AI Usage Declaration. Material "
+         "from the original submission is otherwise unchanged.", {"i": True}),
     ]))
 
     # ---------------- I. Introduction ----------------
@@ -282,7 +292,20 @@ def build_body(rid):
         "flash and one caused by an augmentation setting that is inappropriate "
         "for symbol data. Fifth, a measurement methodology is adopted—repeated "
         "training runs under different random seeds—after single-run results "
-        "were shown to be unreliable at this dataset scale."))
+        "were shown to be unreliable at this dataset scale. Sixth, and added "
+        "after the first two rounds of testing, the training set was extended "
+        "with data captured in the deployment condition itself, which is what "
+        "finally closed the gap between held-out scores and real-world "
+        "behaviour."))
+    A(para(runs=[
+        ("Supporting materials. ", {"b": True}),
+        ("All source code, trained weights, dataset-building scripts and "
+         "evaluation harnesses are in the project repository at "
+         "https://github.com/Jeb-Lee/CT3205_CV_01. A recorded demonstration "
+         "of the real-time system described in Section III-D, running live "
+         "on a webcam with the final detector, is at "
+         "https://youtu.be/7xptfqeyB-0.", {}),
+    ]))
 
     # ---------------- II. Dataset ----------------
     A(heading("Dataset"))
@@ -343,7 +366,20 @@ def build_body(rid):
          ["Annotation format", "YOLO (class, cx, cy, w, h; normalised)"],
          ["Split strategy", "By source photograph, not by instance"]],
         [110, 130],
-        caption="Dataset composition"))
+        caption="Dataset composition as originally captured. Two later "
+                "rounds add training material without altering the "
+                "validation split; the final composition is given in "
+                "Section III-F."))
+    A(para(
+        "This table describes the dataset as first captured, which is what "
+        "the baseline detector and every comparison in Sections V-A to V-E "
+        "are trained and measured on. Two later rounds of data collection, "
+        "described in Sections III-E and III-F, add training images and one "
+        "further class, bringing the final totals to 579 training images "
+        "across 30 classes. The validation split of nine photographs and 72 "
+        "instances is deliberately held fixed throughout, so that every "
+        "figure in this report remains comparable with every other; the "
+        "consequences of freezing it are examined in Section VII-C."))
     A(para(
         "The split is by photograph rather than by instance. This matters: "
         "splitting individual boxes at random would place crops of the same "
@@ -508,6 +544,22 @@ def build_body(rid):
         "running demonstration. This tool is also how the failure described "
         "in Section VI-E was found: it surfaced during ordinary use of the "
         "demonstration, not from a planned experiment."))
+    A(para(
+        "A recording of the demonstration, running live on a webcam with the "
+        "final detector of Section III-F, is available at "
+        "https://youtu.be/7xptfqeyB-0. It shows the system being launched "
+        "from the command line and cards being read at varying distance and "
+        "angle, with class labels and confidence scores drawn in real time."))
+    A(para(
+        "Throughput was measured over 25 live frames at 640x480 on an Intel "
+        "Core i5-12450HX with an NVIDIA RTX 3050. The detector runs at 87.6 "
+        "frames per second on the GPU (11 ms per frame) and 15.8 on the CPU "
+        "(63 ms); the classical-plus-classifier pipeline runs at 24.2 (41 "
+        "ms), its cost dominated by connected-component analysis rather than "
+        "by the network, which is why it scales more steeply with image "
+        "resolution than the detector does. All three are comfortably "
+        "real-time at webcam frame rates, so the choice between them is "
+        "governed by accuracy rather than speed."))
 
     A(heading("Real-Photo Diversity for the Detector", 2))
     A(para(
@@ -545,6 +597,66 @@ def build_body(rid):
         "other detector variant in this report—fine-tuned from the same "
         "COCO-pretrained checkpoint under an otherwise identical "
         "configuration to the baseline."))
+
+    A(heading("Capturing Data in the Deployment Condition", 2))
+    A(para(
+        "Sections VI-E and V-F between them establish that the detector's "
+        "real-world failures were a property of what it had been shown, and "
+        "that supplying more genuinely distinct real photographs closed most "
+        "of the gap. Both rounds, however, still drew on the same original "
+        "photographs: cards resting flat on a surface, shot on a mobile phone "
+        "camera. The remaining difference from the deployment condition was "
+        "not scale or background but the condition itself—a card held in a "
+        "hand, at arm's length, seen through the demonstration laptop's own "
+        "webcam, with that camera's particular resolution, colour rendering "
+        "and compression. The final round of data collection removes that "
+        "difference by capturing training data under exactly those "
+        "conditions."))
+    A(para(
+        "One continuous video, 4 minutes 44 seconds at 1024x576 and 30 frames "
+        "per second, was recorded on the demonstration webcam. Each card of "
+        "the deck was presented in turn, in deck order: brought close to the "
+        "camera, drawn slowly back, then rotated a little clockwise and "
+        "counter-clockwise, so that a single pass covers the range of scale "
+        "and in-plane rotation a live demonstration actually produces. An "
+        "attempt to segment this video into per-card clips automatically was "
+        "abandoned: the classical detector finds a card-shaped region "
+        "continuously, including through the swaps, so gaps in detection do "
+        "not mark the boundaries, and frame-to-frame motion peaks were "
+        "ambiguous because reversing the rotation direction mid-card produces "
+        "a spike indistinguishable from a card change. Frames were instead "
+        "extracted with a purpose-written tool (tools/frame_grabber.py) that "
+        "samples the recording at a fixed interval within one fixed crop "
+        "region—run twice, with two slightly different crops, which is why "
+        "the frames come in two sizes—and the extracted frames were then "
+        "sorted into per-card sets by hand, discarding those caught mid-swap. "
+        "The card boundaries, which no automatic cue located reliably, were "
+        "thus decided by a person looking at the frames. This produced 446 "
+        "frames across 30 classes."))
+    A(para(
+        "The thirtieth class is a down-pointing arrow. The card set supplies "
+        "two physical arrow cards, and which directions they are taken to "
+        "represent is left to the user; earlier rounds of this project had "
+        "defined left, right and up, and this round adds down. Because the "
+        "detection head's output width is fixed by the number of classes, "
+        "adding one cannot be done by continuing to fine-tune an existing "
+        "checkpoint—the final round is therefore trained afresh from the same "
+        "COCO-pretrained weights, and the earlier 29-class checkpoints are "
+        "retained unchanged rather than superseded in place."))
+    A(para(
+        "Labelling the 446 frames reuses the classical detector once more, "
+        "with the same widened bounds as Section III-E, plus two filters. A "
+        "frame is discarded if its Laplacian variance falls below a blur "
+        "threshold, which removes the motion-blurred frames that the pull-in "
+        "and rotation phases inevitably produce; and a frame is discarded if "
+        "the area of its detected region is an outlier against the median for "
+        "that same class, since each class was filmed in one continuous pass "
+        "at broadly consistent distance. That left 401 frames. Visual review "
+        "of all thirty classes then rejected a further 51, for a reason worth "
+        "recording because no automatic check caught it, described in Section "
+        "V-G. The verified set is 350 frames, which combined with the 18 "
+        "whole-photo images and 211 solo crops gives 579 real training "
+        "images—every one of them a genuine photograph, none synthesised."))
 
     # ---------------- IV. Experimental Design ----------------
     A(heading("Experimental Design"))
@@ -774,6 +886,76 @@ def build_body(rid):
         "synthesis is not a full substitute for additional real capture—"
         "consistent with the caution already given for the augmentation "
         "hypothesis in Section VII-A, and revisited in Section VII-B."))
+
+    A(heading("Effect of Deployment-Condition Training Data", 2))
+    A(para(
+        "The final detector adds the 350 verified hand-held webcam frames of "
+        "Section III-F to the 229 images of the previous round, and extends "
+        "the class list to thirty. Held-out performance is given below "
+        "against the previous best; the same nine-photograph validation split "
+        "is used throughout, so the two rows are directly comparable."))
+    A(table(
+        [["Measure", "All-real", "Deployment"],
+         ["Held-out precision", "0.895", "0.931"],
+         ["Held-out recall", "0.973", "0.990"],
+         ["mAP@0.5", "0.995", "0.988"],
+         ["mAP@0.5:0.95", "0.988", "0.983"],
+         ["Worst per-class recall", "0.54 (class 4)", "0.79 (class E)"],
+         ["Sampled real-world photos correct", "7 / 8", "8 / 8"]],
+        [120, 60, 60],
+        caption="The all-real detector of Section V-F against the "
+                "deployment-condition detector of Section III-F, on the "
+                "identical held-out split and the identical eight real-world "
+                "photographs. Single run for each; see Section VII-C."))
+    A(para(
+        "The aggregate held-out figures barely move, and the two mAP columns "
+        "even tip marginally the other way—at 0.988 against 0.995 they are "
+        "well inside the range a different random seed would produce, and "
+        "neither difference should be read as meaningful. What does move is "
+        "the distribution underneath them. In the previous round one class "
+        "stood out as genuinely weak: class 4, at recall 0.54, the single "
+        "measurable defect left after that round's improvement. It now sits "
+        "at 1.00. Of the twenty-three classes with held-out instances, "
+        "twenty-one reach recall 1.00, and the weakest is E at 0.79. The "
+        "improvement is not in the mean but in the floor."))
+    A(para(
+        "The real-world sample is where the effect is plainest. On the same "
+        "eight photographs used in Section V-F, the deployment-condition "
+        "detector reads all eight correctly at the demonstration's default "
+        "0.25 confidence threshold, against seven for its predecessor. The "
+        "photograph that previously required the threshold to be lowered to "
+        "0.1 before it registered at all is now detected outright. "
+        "Confidence on correct detections rises across most of the sample—"
+        "0.41 to 0.97, 0.58 to 0.85, 0.60 to 0.89, 0.54 to 0.75—while two "
+        "of the eight fall, from 0.98 to 0.75 and from 0.98 to 0.83, both "
+        "still correct and both still far above threshold. The pattern is "
+        "one of raising the weakest cases rather than sharpening the "
+        "strongest, which is what the held-out per-class figures show as "
+        "well."))
+    A(para(
+        "One finding from the labelling process belongs here rather than in "
+        "the methodology, because it is a failure of automatic verification "
+        "and not merely a processing step. The 51 frames rejected by visual "
+        "review after the automatic filters had passed them shared a single "
+        "cause: a dark object in the room behind the card—a shelf, a soft "
+        "toy—fell within the same brightness and saturation bounds as the "
+        "black card material, and being adjacent to the card in the image, "
+        "was absorbed into the same connected component. The resulting box "
+        "was a plausible-looking rectangle that included a piece of the "
+        "background. This is the hand-shadow merge of Section VI-E in "
+        "another guise, and like it, it defeats the dark-background "
+        "assumption the classical stage rests on. It resisted every "
+        "automatic test attempted: box area was not anomalous, because in "
+        "the affected classes enough frames shared the condition to shift "
+        "the class median itself; aspect ratio was not anomalous, because "
+        "the merged region happened to remain roughly square; and mask "
+        "solidity was not anomalous, because a card's own glyph already "
+        "punches a large hole in the mask, so the metric is dominated by the "
+        "symbol rather than by the merge. Only inspection separated them. "
+        "The rejection was uneven across classes—three of the sixteen frames "
+        "for class 3 survived, against twenty-five of twenty-six for class "
+        "Y—entirely according to what happened to be behind the operator's "
+        "hand at that point in the recording."))
 
     # ---------------- VI. Challenging scenarios ----------------
     A(heading("Challenging Scenarios"))
@@ -1030,6 +1212,17 @@ def build_body(rid):
         "identified. The hypothesis therefore remains open but is now better "
         "motivated; the fliplr ablation described above has still not been "
         "run."))
+    A(para(
+        "It has also now survived a third training round without being "
+        "tested. The deployment-condition detector of Section III-F was "
+        "trained under the same default configuration, horizontal flipping "
+        "included, and adds real examples of all four arrow orientations "
+        "including the new down-pointing class. Whether the extra data "
+        "outweighs the label corruption for these classes cannot be read "
+        "off the held-out figures, because none of the arrow classes has a "
+        "single instance in the validation split. The ablation remains the "
+        "cheapest outstanding experiment in this report and the one most "
+        "likely to change a per-class result."))
 
     A(heading("Data Volume Against Model Capacity", 2))
     A(para(
@@ -1065,17 +1258,37 @@ def build_body(rid):
         "sized training set, suggesting the relevant quantity is not merely "
         "how many training images exist but how much genuinely new visual "
         "information they carry."))
+    A(para(
+        "The third round sharpens that refinement into something more "
+        "specific than diversity. Its 350 added frames are less diverse than "
+        "the 211 crops of the previous round by most ordinary measures: they "
+        "come from a single continuous recording, in one room, on one "
+        "afternoon, against a nearly constant background, and many are near "
+        "neighbours of each other in time. What they have instead is "
+        "correspondence with the deployment condition—hand-held, at "
+        "arm's length, through the camera the system is actually demonstrated "
+        "on. That narrow, repetitive set repaired the last measurable weak "
+        "class and completed the real-world sample, which suggests the "
+        "governing quantity is not diversity in the abstract but overlap with "
+        "the distribution the model will be asked to work in. Taken across "
+        "all three rounds the pattern is consistent and, by this point, hard "
+        "to attribute to chance: synthetic variation on existing pixels "
+        "helped least, genuinely new photographs of the same subject helped "
+        "more, and photographs taken under the conditions of use helped most "
+        "—with the architecture, the optimiser, the schedule and the "
+        "validation split held fixed throughout."))
 
     A(heading("Limitations", 2))
     A(para(
         "Several limitations should be stated plainly. Only one training run "
         "was performed per detector configuration reported—baseline, "
-        "scale+tilt and all-real alike—so the detector figures are "
+        "scale+tilt, all-real and deployment-condition alike—so the detector "
+        "figures are "
         "single-run and, by this report's own argument, should be treated "
         "with the caution applied to the classifier's single-run numbers; "
-        "the near-100% held-out figures in Sections VI-E and V-F are those "
-        "most in need of it, and the eight-photograph real-world sample in "
-        "Section V-F is smaller still. The detector "
+        "the near-100% held-out figures in Sections VI-E, V-F and V-G are those "
+        "most in need of it, and the eight-photograph real-world sample used "
+        "in Sections V-F and V-G is smaller still. The detector "
         "experiments are consequently thinner than the classifier experiments: "
         "the data-volume, duration and architecture experiments were conducted on "
         "the classifier, and equivalents for the detector remain to be run. The "
@@ -1084,6 +1297,22 @@ def build_body(rid):
         "classical pipeline's apparent superiority is specific to this deck and "
         "these conditions; it depends on an assumption—dark, matte cards on "
         "lighter backgrounds—that the flash experiment shows is easy to break."))
+    A(para(
+        "One limitation grew rather than shrank over the three rounds and "
+        "should be stated in its own right. The held-out split was fixed "
+        "early, before the pictographic classes and the letters Y and Z were "
+        "well represented, and it was deliberately not changed afterwards so "
+        "that figures from different rounds would stay comparable. The "
+        "consequence is that seven of the final system's thirty classes—Y, Z, "
+        "the circle, and all four arrows—have no instances at all in the "
+        "validation split. Their held-out recall is not low; it is undefined. "
+        "Everything this report says about those classes rests on live "
+        "observation during demonstration, which is evidence of a weaker kind "
+        "than the rest of the numbers here, and the down-pointing arrow added "
+        "in the final round has never been measured at all. A held-out set "
+        "extended to cover all thirty classes is a prerequisite for any "
+        "stronger claim about them, and is the first thing a continuation of "
+        "this work should build."))
 
     A(heading("Future Work", 2))
     A(para(
@@ -1105,23 +1334,36 @@ def build_body(rid):
         "example by excluding skin-tone pixels before thresholding, since no "
         "amount of additional training data can fix a hand-specified rule."))
     A(para(
-        "Two further directions follow from Sections V-F and VI-F. Sixth, "
-        "run the fliplr ablation now more strongly motivated by the "
-        "instance-count evidence in Section VII-A—the arrow-class asymmetry "
-        "predicted by that hypothesis was observed, but a controlled "
-        "before-and-after comparison has still not been made. Seventh, "
-        "extend the all-real approach with real rather than synthetic "
-        "hand-held examples: a video-extraction tool has been built that "
-        "samples frames from an unedited webcam recording of a card moved "
-        "through the frame at varying scale and angle, rejects blurred "
-        "frames, and auto-labels the remainder with the same classical "
-        "detector used throughout this report, skipping any frame it cannot "
-        "label confidently rather than guessing. This is a direct extension "
-        "of the Section V-F result—if real photographic diversity from "
-        "static photographs closed most of the hand-held gap, real "
-        "diversity captured on the actual deployment camera, at the actual "
-        "deployment scale, should close more of it—but the tool has not yet "
-        "been run against real footage, and this remains untested."))
+        "Two further directions followed from Sections V-F and VI-F, and one "
+        "of them has since been carried out. Sixth, run the fliplr ablation "
+        "now more strongly motivated by the instance-count evidence in "
+        "Section VII-A—the arrow-class asymmetry predicted by that hypothesis "
+        "was observed, but a controlled before-and-after comparison has still "
+        "not been made, and the final round adds arrow data without "
+        "disentangling the two effects. Seventh, and no longer outstanding: "
+        "the proposal to extend the all-real approach with real rather than "
+        "synthetic hand-held examples, on the prediction that data captured "
+        "on the deployment camera at the deployment scale would close more of "
+        "the gap than synthesis had. Section III-F carried this out and "
+        "Section V-G reports the result, which was in the predicted "
+        "direction—8 of 8 on the real-world sample, and the last measurable "
+        "weak class repaired."))
+    A(para(
+        "Three directions now follow from that final round. Eighth, and "
+        "before any of the others, extend the held-out split to cover all "
+        "thirty classes, since seven of them currently cannot be measured at "
+        "all; without this, further per-class work on the pictographic "
+        "classes cannot be evaluated even if it succeeds. Ninth, address the "
+        "background-merge failure of Section V-G at the segmentation stage "
+        "rather than by inspection: every automatic test tried—area, aspect "
+        "ratio, mask solidity—failed to separate merged boxes from clean "
+        "ones, and 51 frames had to be rejected by eye, which does not scale "
+        "and is not reproducible. A learned segmenter, as already proposed "
+        "above, would sidestep the brightness assumption the merge exploits. "
+        "Tenth, re-shoot the four classes left thin by that rejection—3, 4, 8 "
+        "and 9, reduced to between three and seven usable frames each—against "
+        "a plain background, which is a few minutes of work and would even "
+        "out the per-class counts the final round otherwise leaves uneven."))
 
     # ---------------- VIII. Conclusion ----------------
     A(heading("Conclusion"))
@@ -1181,6 +1423,35 @@ def build_body(rid):
         "improvement came from showing the model more or better data, and "
         "every remaining gap is one a controlled experiment has not yet been "
         "run to close."))
+    A(para(
+        "A third round settled the question the first two had circled. If the "
+        "detector's real-world failures came from never having seen the "
+        "deployment condition, the direct remedy was to capture training data "
+        "in that condition: cards held in the hand, filmed on the "
+        "demonstration webcam itself, extracted frame by frame and verified "
+        "by inspection. Adding 350 such frames raised real-world correctness "
+        "to 8 of 8, repaired class 4—the last measurable weak class, at "
+        "recall 0.54—to 1.00, and extended the system to a thirtieth class, "
+        "while held-out aggregates stayed level. That set was narrower than "
+        "the material added in the round before it, not broader: one room, "
+        "one afternoon, one background. Its advantage was correspondence with "
+        "the conditions of use, which suggests the operative quantity was "
+        "never diversity for its own sake but overlap with the distribution "
+        "the system is asked to work in."))
+    A(para(
+        "Across three rounds of improvement the architecture never changed. "
+        "The detector that reads eight of eight real photographs is the same "
+        "YOLOv8n, fine-tuned from the same COCO-pretrained checkpoint, under "
+        "the same optimiser and schedule, as the one that read one of eight. "
+        "What changed was the training data, and the most useful data was the "
+        "data that looked like the problem. Set against that, the report's "
+        "one unambiguous architectural experiment—replacing the classifier's "
+        "fully connected head with global average pooling—cost 26 points. The "
+        "lesson the project actually taught, as distinct from the accuracy it "
+        "reached, is where to spend effort when a model underperforms: on "
+        "what it is being shown, and on measuring honestly enough to tell the "
+        "difference between a model that has improved and a benchmark that "
+        "cannot see the failure."))
 
     # ---------------- AI declaration ----------------
     A(heading("AI Usage Declaration"))
@@ -1202,15 +1473,26 @@ def build_body(rid):
         "distinct causes; implementation of a synthetic scale, rotation and "
         "perspective augmentation to address one of them; implementation of "
         "the real-photo-diversity dataset conversion and detector variant "
-        "described in Section III-E, and of the not-yet-exercised "
-        "webcam-video extraction tool described in Section VII-D; "
-        "diagnosis of the arrow-class result in Section VI-F, including "
-        "checking the training configuration and per-class instance counts "
-        "against the augmentation hypothesis rather than asserting it from "
-        "the observation alone; discussion of experimental design and of "
+        "described in Section III-E; diagnosis of the arrow-class result in "
+        "Section VI-F, including checking the training configuration and "
+        "per-class instance counts against the augmentation hypothesis rather "
+        "than asserting it from the observation alone; the labelling, "
+        "filtering and verification pipeline for the deployment-condition "
+        "frames in Section III-F, including the visual review of all thirty "
+        "classes that rejected 51 frames the automatic filters had passed; "
+        "discussion of experimental design and of "
         "how to report results honestly, including the decision to report "
         "the unsuccessful detector-plus-classifier combination in Section "
         "VI-E rather than omit it; and drafting assistance for this report."))
+    A(para(
+        "Work in the final round that was not AI-assisted should be "
+        "distinguished, since it is the round that produced the largest "
+        "improvement. The decision to capture training data in the "
+        "deployment condition was the author's, as was the filming and the "
+        "sorting of extracted frames into per-card sets after automatic "
+        "segmentation was found unreliable. The frame-extraction tool "
+        "(tools/frame_grabber.py) was written outside the Claude Code "
+        "sessions declared above."))
     A(para(
         "Which parts were AI-assisted: the majority of the source code was "
         "written with AI assistance. The experimental direction, the decisions "
@@ -1228,7 +1510,7 @@ def build_body(rid):
         "that could not be verified by measurement are identified as hypotheses "
         "in the text, most notably the augmentation diagnosis in Section VII-A."))
     A(para(
-        "A separate script in the repository, identify_cards.py, queries a "
+        "A separate script in the repository, tools/identify_cards.py, queries a "
         "hosted vision-language model through the Azure OpenAI API. It was "
         "written during exploration, is not part of either pipeline evaluated "
         "here, and contributes to none of the reported results. It is retained "
@@ -1311,7 +1593,7 @@ def main():
     new_xml = root_open + title_block + body + body_sect + "</w:body></w:document>"
     open(DOC_XML, "w", encoding="utf-8").write(new_xml)
 
-    out = os.path.join(HERE, "CT3205_Assignment1_Report_DRAFT.docx")
+    out = os.path.join(HERE, "CT3205_Assignment1_Report_rev03.docx")
     if os.path.exists(out):
         os.remove(out)
     # [Content_Types].xml first, as Word expects.

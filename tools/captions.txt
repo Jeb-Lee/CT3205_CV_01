@@ -1,0 +1,15 @@
+# Demo video captions -- CT3205 Assignment 1
+# Edit the timestamps to match your actual recording once it's cut.
+# Format: M:SS text   OR   M:SS-M:SS text (explicit end time)
+
+0:00 Hi, I'm Jeb -- this is my CT3205 real-time detection demo
+0:05 A YOLOv8n detector, fine-tuned by transfer learning on my own card dataset
+0:10 Starting the demo from the command line
+0:14 python webcam_demo.py --weights ../yolo/yolo_runs/cards_v2/weights/best.pt
+0:18 It detects the card, draws the box, and reports class + confidence live
+0:23 Holding cards at different distances -- near and far
+0:28 ...and tilted at an angle, not just flat to the camera
+0:34 Most classes are read correctly with high confidence
+0:39 A few, like "1", are still a bit shakier -- lower contrast against skin tone
+0:45 That's an honest limitation, not hidden from the report
+0:50 Thanks for watching
