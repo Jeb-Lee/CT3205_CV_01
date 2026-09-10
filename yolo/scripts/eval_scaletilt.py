@@ -1,16 +1,30 @@
 """
-Two checks on the scale+tilt-augmented YOLO fine-tune
-(yolo_runs/cards_scaletilt/weights/best.pt), against the untouched baseline
-(yolo_runs/cards/weights/best.pt):
+Two checks across the YOLO fine-tunes -- the untouched baseline
+(yolo_runs/cards), the scale+tilt-augmented run (yolo_runs/cards_scaletilt),
+the all-real run trained on the CNN's own 211 solo-crop photos plus the 18
+whole-photo images (yolo_runs/cards_allreal, see build_solo_crops.py), and
+the final 30-class run that adds 350 hand-held webcam frames
+(yolo_runs/cards_v2, see extract_frame_folder.py):
 
 1. Standard held-out detection/classification metrics on yolo_dataset's own
-   val split (the flat-on-table photos) -- confirms the augmented run didn't
+   val split (the flat-on-table photos) -- confirms each variant didn't
    regress on the original distribution.
-2. Direct test against real hand-held photos captured live during the demo
-   debugging session (demo/captures/), at a spread of confidence thresholds
-   including very low ones -- this is the actual question: did teaching the
-   model to see cards at hand-held scale/rotation/tilt make it detect them
-   at all, where the baseline produced literally zero boxes down to conf 0.01.
+2. Direct test against real hand-held/novel-background photos captured live
+   during demo testing (demo/captures/), at a spread of confidence
+   thresholds including very low ones -- this is the actual question: did
+   each round of training data make the detector work under the conditions
+   it is really used in, where the baseline produced literally zero boxes
+   down to conf 0.01.
+   Note: the two novel-background (whiteboard) photos already have a
+   detection box drawn into their pixels from a prior live demo run -- fine
+   for evaluation (no training happens here), but worth knowing if a result
+   looks odd. demo/captures/ is not committed; part 2 reports MISSING for
+   any photo that isn't present locally.
+
+Class names for predictions come from each model's own `names`, not from
+data.yaml: cards_v2 has a 30th class (down_arrow) that the 29-class
+data.yaml doesn't list. The first 29 are identical across all four, so
+ground truth and predictions still line up.
 """
 import os
 import sys
@@ -32,6 +46,8 @@ IMAGES_DIR = os.path.join(REPO, "yolo_dataset", "images", "val")
 WEIGHTS = {
     "baseline (cards)": os.path.join(REPO, "yolo_runs", "cards", "weights", "best.pt"),
     "scale+tilt (cards_scaletilt)": os.path.join(REPO, "yolo_runs", "cards_scaletilt", "weights", "best.pt"),
+    "all-real (cards_allreal)": os.path.join(REPO, "yolo_runs", "cards_allreal", "weights", "best.pt"),
+    "deployment (cards_v2)": os.path.join(REPO, "yolo_runs", "cards_v2", "weights", "best.pt"),
 }
 
 HAND_HELD_PHOTOS = [
@@ -41,6 +57,8 @@ HAND_HELD_PHOTOS = [
     ("shot_20260906_221422.jpg", "V"),
     ("shot_20260906_222158.jpg", "G"),
     ("shot_20260906_222202.jpg", "G"),
+    ("shot_20260907_201820.jpg", "A"),   # card stuck to a whiteboard --
+    ("shot_20260907_202847.jpg", "3"),   # novel background, not hand-held
 ]
 
 with open(os.path.join(REPO, "yolo_dataset", "data.yaml")) as f:
@@ -61,7 +79,7 @@ for name, weights_path in WEIGHTS.items():
         result = model.predict(img_path, verbose=False, conf=0.25)[0]
         boxes = []
         for box_t, cls_t in zip(result.boxes.xyxy, result.boxes.cls):
-            boxes.append((tuple(box_t.tolist()), yolo_classes[int(cls_t.item())]))
+            boxes.append((tuple(box_t.tolist()), model.names[int(cls_t.item())]))
         preds[img_path] = boxes
     print_report(name, evaluate(gt_by_image, preds))
 
@@ -89,7 +107,7 @@ for name, weights_path in WEIGHTS.items():
                 any_hit = True
                 top_i = result.boxes.conf.argmax().item()
                 top_conf = result.boxes.conf[top_i].item()
-                top_cls = yolo_classes[int(result.boxes.cls[top_i].item())]
+                top_cls = model.names[int(result.boxes.cls[top_i].item())]
                 line += f" [conf>={conf}: {n} box(es), top={top_cls}@{top_conf:.2f}]"
             else:
                 line += f" [conf>={conf}: 0]"

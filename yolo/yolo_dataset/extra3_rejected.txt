@@ -1,0 +1,58 @@
+# Frames from cnn/images/extra3 that passed extract_frame_folder.py's automatic
+# filters (blur, detection, per-class area outlier) but were rejected on visual
+# review of every class's contact sheet: in each, a dark object behind the card
+# (a shelf, a soft toy) fused with the card under the brightness threshold, so
+# the auto-detected box included background. No automatic test separated these
+# (area, aspect ratio and mask solidity were all tried) -- see report Sec. V-G.
+# Pass with --exclude; one source filename per line.
+3_Img_004.jpg
+3_Img_006.jpg
+3_Img_010.jpg
+3_Img_014.jpg
+3_Img_015.jpg
+3_Img_016.jpg
+4_Img_009.jpg
+4_Img_010.jpg
+4_Img_012.jpg
+4_Img_014.jpg
+4_Img_015.jpg
+6_Img_015.jpg
+6_Img_016.jpg
+6_Img_017.jpg
+8_Img_010.jpg
+8_Img_011.jpg
+8_Img_012.jpg
+8_Img_013.jpg
+9_Img_010.jpg
+9_Img_011.jpg
+9_Img_012.jpg
+9_Img_013.jpg
+A_Img_008.jpg
+A_Img_009.jpg
+A_Img_012.jpg
+B_Img_009.jpg
+B_Img_010.jpg
+C_Img_010.jpg
+C_Img_012.jpg
+C_Img_013.jpg
+D_Img_011.jpg
+D_Img_012.jpg
+D_Img_013.jpg
+E_Img_011.jpg
+E_Img_012.jpg
+E_Img_013.jpg
+E_Img_015.jpg
+E_Img_016.jpg
+E_Img_017.jpg
+E_Img_018.jpg
+G_Img_007.jpg
+G_Img_009.jpg
+H_Img_010.jpg
+H_Img_011.jpg
+H_Img_012.jpg
+H_Img_014.jpg
+T_Img_017.jpg
+W_Img_018.jpg
+X_Img_011.jpg
+X_Img_014.jpg
+X_Img_015.jpg
