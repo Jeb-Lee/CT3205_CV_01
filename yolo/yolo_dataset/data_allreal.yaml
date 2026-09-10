@@ -1,4 +1,6 @@
-path: C:\Users\jeble\PycharmProjects\CT3205_CV_01\yolo\yolo_dataset
+# All-real dataset (yolo_runs/cards_allreal): the 18 originals plus the 211
+# solo crops from scripts/build_solo_crops.py -- the same real photos the CNN
+# classifier trains on.
 train: allreal_train.txt
 val: images/val
 names:

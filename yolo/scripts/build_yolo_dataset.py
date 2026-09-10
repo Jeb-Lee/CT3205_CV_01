@@ -210,9 +210,12 @@ if __name__ == "__main__":
     write_split(train_entries, "train", classes)
     write_split(val_entries, "val", classes)
 
+    # No `path:` key, so the yaml resolves relative to its own folder and the
+    # repo works from any clone; `train` is an explicit list (written by
+    # scripts/make_train_lists.py) so later rounds' images in the same folder
+    # can't leak into the baseline.
     with open(os.path.join(OUT, "data.yaml"), "w") as f:
-        f.write(f"path: {OUT}\n")
-        f.write("train: images/train\n")
+        f.write("train: baseline_train.txt\n")
         f.write("val: images/val\n")
         f.write(f"names:\n")
         for i, c in enumerate(classes):

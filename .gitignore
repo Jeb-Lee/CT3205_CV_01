@@ -5,6 +5,9 @@ __pycache__/
 .venv/
 venv/
 
+# --- secrets (tools/identify_cards.py reads Azure OpenAI credentials from here) ---
+.env
+
 # --- IDE ---
 .idea/
 
@@ -20,15 +23,25 @@ report_build/page-*.png
 report_build/*.pdf
 report_build/unpacked/
 
-# --- YOLO regeneratable artifacts ---
+# --- YOLO: Ultralytics caches, auto-downloaded checkpoints, ad-hoc val output ---
 yolo/yolo_dataset/labels/*.cache
-yolo/yolo_dataset/images/train/synth_*.jpg
-yolo/yolo_dataset/labels/train/synth_*.txt
-yolo/yolo_dataset/images/train/solo_*.jpg
-yolo/yolo_dataset/labels/train/solo_*.txt
-yolo/yolo_dataset/images/train/webcam_*.jpg
-yolo/yolo_dataset/labels/train/webcam_*.txt
-yolo/yolo_dataset/allreal_train.txt
 yolo/weights/
 yolo/yolov8n.pt
+yolo/runs/
 yolo/_preview_webcam_*.jpg
+
+# --- YOLO: synthetic scale+tilt crops -- regenerate with augment_scale_tilt.py ---
+# (solo_* and webcam_*, the final detector's training set, ARE committed, so
+#  yolo_runs/cards_v2 can be retrained straight from a clone.)
+yolo/yolo_dataset/images/train/synth_*.jpg
+yolo/yolo_dataset/labels/train/synth_*.txt
+
+# --- extract_frame_folder.py --preview contact sheets ---
+cnn/images/extra3/_accepted_*.jpg
+
+# --- tools/ working files ---
+# frame_grabber.py's raw interval output (~330 MB of PNG); the sorted,
+# labelled result of it is cnn/images/extra3/
+tools/frames/
+# working copy of the recording; the committed copy is cnn/images/extra3_vid/
+tools/*.mp4

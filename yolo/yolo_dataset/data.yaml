@@ -1,5 +1,8 @@
-path: C:\Users\jeble\PycharmProjects\CT3205_CV_01\yolo\yolo_dataset
-train: images/train
+# Baseline dataset (yolo_runs/cards): the 18 original whole-photo images.
+# Each variant trains from an explicit image list -- see
+# scripts/make_train_lists.py for why. No `path:` key, so Ultralytics
+# resolves everything relative to this file's own folder.
+train: baseline_train.txt
 val: images/val
 names:
   0: 1
