@@ -1,7 +1,7 @@
 # Frames from cnn/images/extra3 that passed extract_frame_folder.py's automatic
 # filters (blur, detection, per-class area outlier) but were rejected on visual
 # review of every class's contact sheet: in each, a dark object behind the card
-# (a shelf, a soft toy) fused with the card under the brightness threshold, so
+# (a tinted window, a soft toy) fused with the card under the brightness threshold, so
 # the auto-detected box included background. No automatic test separated these
 # (area, aspect ratio and mask solidity were all tried) -- see report Sec. V-G.
 # Pass with --exclude; one source filename per line.

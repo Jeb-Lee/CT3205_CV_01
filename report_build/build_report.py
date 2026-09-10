@@ -182,11 +182,14 @@ def register_images(figs):
 # report content
 # --------------------------------------------------------------------------
 FIG_SRC = {
-    "annot": r"C:\Users\jeble\AppData\Local\Temp\claude\C--Users-jeble-PycharmProjects-CT3079-Capstone\6309f598-2260-42e7-932e-2bd4acbbd104\scratchpad\yolo_check_train006_full.jpg",
+    "annot": os.path.join(HERE, "figures", "annotation_verification.jpg"),
     "curves": os.path.join(HERE, "..", "yolo", "yolo_runs", "cards", "results.png"),
     "confusion": os.path.join(HERE, "..", "yolo", "yolo_runs", "cards", "confusion_matrix_normalized.png"),
     "preds": os.path.join(HERE, "..", "yolo", "yolo_runs", "cards", "val_batch0_pred.jpg"),
     "glare": os.path.join(HERE, "..", "RngTest", "Test2.jpeg"),
+    "fusing": os.path.join(HERE, "figures", "fusing_neighbouring_cards.jpg"),
+    "video": os.path.join(HERE, "figures", "deployment_video_frame.png"),
+    "grabber": os.path.join(HERE, "figures", "frame_grabber_roi.jpg"),
 }
 
 
@@ -238,8 +241,8 @@ def build_body(rid):
         "still-unconfirmed evidence for the augmentation hypothesis above. A "
         "third round closes the loop on the deployment gap directly: capturing "
         "training data in the deployment condition itself—cards held in the "
-        "hand, filmed on the demonstration webcam and extracted frame by "
-        "frame—raises real-world correctness to 8 of 8, repairs the last "
+        "hand, filmed on an iPhone 16 Pro Max and extracted frame by "
+        "frame at 0.5-second intervals—raises real-world correctness to 8 of 8, repairs the last "
         "remaining weak class from the previous round, and reaches mAP@0.5 of "
         "0.988 while extending the system to a thirtieth class. Across all "
         "three rounds not one architectural change was made: every gain came "
@@ -250,14 +253,16 @@ def build_body(rid):
         "neural networks, symbol recognition, data augmentation, failure analysis",
         style="Keywords"))
     A(para(runs=[
-        ("Revision 3 note: ", {"b": True}),
+        ("Revision 4 note: ", {"b": True}),
         ("revision 2 added a dataset experiment for the detector (Sections "
-         "III-E, V-F) and a second round of real-time testing (Section VI-F). "
-         "This revision adds deployment-condition data capture (Section "
-         "III-F), its results (Section V-G), and links to the demonstration "
-         "video and source repository (Section I), with corresponding updates "
-         "to the Discussion, Conclusion and AI Usage Declaration. Material "
-         "from the original submission is otherwise unchanged.", {"i": True}),
+         "III-E, V-F) and a second round of real-time testing (Section VI-F); "
+         "revision 3 added deployment-condition data capture (Section III-F), "
+         "its results (Section V-G), and links to the demonstration video and "
+         "source repository (Section I). This revision incorporates the "
+         "author's own revisions, corrects the class count and the account of "
+         "how the final round's frames were captured, and adds figures of a "
+         "data defect and of the capture process. Material from the original "
+         "submission is otherwise unchanged.", {"i": True}),
     ]))
 
     # ---------------- I. Introduction ----------------
@@ -300,12 +305,14 @@ def build_body(rid):
     A(para(runs=[
         ("Supporting materials. ", {"b": True}),
         ("All source code, trained weights, dataset-building scripts and "
-         "evaluation harnesses are in the project repository at "
-         "https://github.com/Jeb-Lee/CT3205_CV_01. A recorded demonstration "
-         "of the real-time system described in Section III-D, running live "
-         "on a webcam with the final detector, is at "
-         "https://youtu.be/7xptfqeyB-0.", {}),
+         "evaluation harnesses are in the project repository at:", {}),
     ]))
+    A(para("https://github.com/Jeb-Lee/CT3205_CV_01"))
+    A(para(
+        "A recorded demonstration of the real-time system described in "
+        "Section III-D, running live on a webcam with the final detector, is "
+        "at:"))
+    A(para("https://youtu.be/7xptfqeyB-0"))
 
     # ---------------- II. Dataset ----------------
     A(heading("Dataset"))
@@ -315,14 +322,18 @@ def build_body(rid):
         "The dataset consists of photographs of a physical set of symbol cards. "
         "Each card is a matte black square bearing a single symbol printed in one "
         "of five colours. The full symbol inventory comprises the digits 1 to 9, "
-        "the letters A to H and S to Z, and four pictographic symbols: a filled "
-        "circle and left-, right- and up-pointing arrows, giving 29 classes in "
-        "total. This exceeds the required minimum of ten classes."))
+        "the letters A to H and S to Z, a filled circle, and two arrow cards: "
+        "28 cards in all. An arrow's class is the direction it points, so the "
+        "two arrow cards supply left-, right- and up-pointing arrows—and, in "
+        "the final round, down (Section III-F)—giving 29 classes in total, 30 "
+        "in the final round. This exceeds the required minimum of ten "
+        "classes."))
     A(para(
         "Photographs were captured in three sessions using a mobile phone camera "
         "under ordinary indoor lighting. The sessions deliberately varied the "
         "conditions: cards were photographed on a clipboard, on two different "
-        "marble surfaces, and on a woven mat, from a range of heights and "
+        "marble surfaces with differing lighting conditions, and on a tarpaulin "
+        "sheet with sub-optimal lighting, from a range of heights and "
         "viewing angles, with individual cards left rotated by up to roughly "
         "twenty degrees. A later session spaced the cards further apart after an "
         "earlier attempt with cards placed edge to edge proved problematic for "
@@ -356,7 +367,7 @@ def build_body(rid):
     A(heading("Dataset Composition", 2))
     A(table(
         [["Property", "Value"],
-         ["Classes", "29 (25 characters, 4 pictographs)"],
+         ["Classes", "29 (25 characters, circle, 3 arrow directions)"],
          ["Images (train)", "18"],
          ["Images (validation)", "9"],
          ["Annotated instances (train)", "251"],
@@ -433,8 +444,13 @@ def build_body(rid):
         "became that class's definition. The defect only became visible once "
         "multiple genuine examples per class existed and could contradict one "
         "another. Two further sources were excluded wholesale: a photograph taken "
-        "on a dark, patterned mat, whose background repeatedly defeated the "
+        "on a dark, patterned tarpaulin sheet, whose background repeatedly "
+        "defeated the "
         "black-card threshold, and a recurring oversized crop of one letter."))
+    A(figure(rid[FIG_SRC["fusing"]], FIG_SRC["fusing"],
+             "Fusing of neighbouring cards. Where cards touch (circled), "
+             "thresholding merges them into a single region, one source of "
+             "the corrupted crops described in this section.", width_pt=150))
 
     # ---------------- III. Methodology ----------------
     A(heading("Methodology"))
@@ -604,35 +620,55 @@ def build_body(rid):
         "real-world failures were a property of what it had been shown, and "
         "that supplying more genuinely distinct real photographs closed most "
         "of the gap. Both rounds, however, still drew on the same original "
-        "photographs: cards resting flat on a surface, shot on a mobile phone "
-        "camera. The remaining difference from the deployment condition was "
-        "not scale or background but the condition itself—a card held in a "
-        "hand, at arm's length, seen through the demonstration laptop's own "
-        "webcam, with that camera's particular resolution, colour rendering "
-        "and compression. The final round of data collection removes that "
-        "difference by capturing training data under exactly those "
-        "conditions."))
+        "photographs: cards resting flat on a surface. The remaining difference "
+        "from the deployment condition was not background but the condition "
+        "itself—a card held in a hand, at arm's length, filling much of the "
+        "frame and turning as the hand moves. The final round of data "
+        "collection targets that difference directly by filming cards held in "
+        "exactly that way. The recording was made on a phone rather than on "
+        "the demonstration webcam, so camera characteristics were not matched: "
+        "what this round supplies is the pose and scale of use, not its "
+        "camera."))
     A(para(
-        "One continuous video, 4 minutes 44 seconds at 1024x576 and 30 frames "
-        "per second, was recorded on the demonstration webcam. Each card of "
-        "the deck was presented in turn, in deck order: brought close to the "
-        "camera, drawn slowly back, then rotated a little clockwise and "
-        "counter-clockwise, so that a single pass covers the range of scale "
-        "and in-plane rotation a live demonstration actually produces. An "
-        "attempt to segment this video into per-card clips automatically was "
-        "abandoned: the classical detector finds a card-shaped region "
-        "continuously, including through the swaps, so gaps in detection do "
-        "not mark the boundaries, and frame-to-frame motion peaks were "
-        "ambiguous because reversing the rotation direction mid-card produces "
-        "a spike indistinguishable from a card change. Frames were instead "
-        "extracted with a purpose-written tool (tools/frame_grabber.py) that "
-        "samples the recording at a fixed interval within one fixed crop "
-        "region—run twice, with two slightly different crops, which is why "
-        "the frames come in two sizes—and the extracted frames were then "
-        "sorted into per-card sets by hand, discarding those caught mid-swap. "
-        "The card boundaries, which no automatic cue located reliably, were "
-        "thus decided by a person looking at the frames. This produced 446 "
-        "frames across 30 classes."))
+        "One continuous video, 4 minutes 44 seconds long, was recorded on an "
+        "iPhone 16 Pro Max; the copy used here is 1024x576 at 30 frames per "
+        "second. Each card of the deck was presented in turn, in deck order: "
+        "brought close to the camera, drawn slowly back, then rotated a little "
+        "clockwise and counter-clockwise, so that a single pass covers the "
+        "range of scale and in-plane rotation a live demonstration actually "
+        "produces. An attempt to segment this video into per-card clips "
+        "automatically was abandoned: the classical detector finds a "
+        "card-shaped region continuously, including through the swaps, so gaps "
+        "in detection do not mark the boundaries, and frame-to-frame motion "
+        "peaks were ambiguous because reversing the rotation direction "
+        "mid-card produces a spike indistinguishable from a card change."))
+    A(figure(rid[FIG_SRC["video"]], FIG_SRC["video"],
+             "A frame from the recording used for the deployment-condition "
+             "training data: a card held in the hand at arm's length, filmed "
+             "on an iPhone 16 Pro Max."))
+    A(para(
+        "Frames were extracted with a purpose-written tool "
+        "(tools/frame_grabber.py) that samples the recording every 0.5 "
+        "seconds within a capture region dragged out by hand at the start of "
+        "each run. The method is efficient, but placing the capture region "
+        "proved hit-and-miss: a hand cannot hold a card in a pixel-accurate "
+        "position, so no single region captured every card cleanly, and many "
+        "frames showed a card with an indistinct or cut-off border, out of "
+        "focus, blinded by glare, or outside the region altogether. The tool "
+        "was therefore run several times, each time with a fresh region aimed "
+        "at the cards the previous run had missed, and the bad frames from "
+        "each run were deleted by hand as the rest were sorted into per-card "
+        "sets. The card boundaries, which no automatic cue located reliably, "
+        "were thus decided by a person looking at the frames. This is why the "
+        "frames come in more than one size, and why the number of frames per "
+        "card is uneven. The result was 446 frames across 30 classes—a set "
+        "still marred in places by a dark window in the background, the cause "
+        "of the rejections described in Section V-G."))
+    A(figure(rid[FIG_SRC["grabber"]], FIG_SRC["grabber"],
+             "Frame extraction with tools/frame_grabber.py, run as "
+             "frame_grabber.py New_Vid.mp4 --roi --every 0.5: a capture "
+             "region is dragged over the recording by hand, and one cropped "
+             "frame is saved every 0.5 seconds."))
     A(para(
         "The thirtieth class is a down-pointing arrow. The card set supplies "
         "two physical arrow cards, and which directions they are taken to "
@@ -651,7 +687,8 @@ def build_body(rid):
         "and rotation phases inevitably produce; and a frame is discarded if "
         "the area of its detected region is an outlier against the median for "
         "that same class, since each class was filmed in one continuous pass "
-        "at broadly consistent distance. That left 401 frames. Visual review "
+        "at broadly consistent distance. That left 401 frames, with the class "
+        "imbalance still unresolved. Visual review "
         "of all thirty classes then rejected a further 51, for a reason worth "
         "recording because no automatic check caught it, described in Section "
         "V-G. The verified set is 350 frames, which combined with the 18 "
@@ -889,7 +926,7 @@ def build_body(rid):
 
     A(heading("Effect of Deployment-Condition Training Data", 2))
     A(para(
-        "The final detector adds the 350 verified hand-held webcam frames of "
+        "The final detector adds the 350 verified hand-held phone-camera frames of "
         "Section III-F to the 229 images of the previous round, and extends "
         "the class list to thirty. Held-out performance is given below "
         "against the previous best; the same nine-photograph validation split "
@@ -937,7 +974,7 @@ def build_body(rid):
         "the methodology, because it is a failure of automatic verification "
         "and not merely a processing step. The 51 frames rejected by visual "
         "review after the automatic filters had passed them shared a single "
-        "cause: a dark object in the room behind the card—a shelf, a soft "
+        "cause: a dark object in the room behind the card—a tinted window, a soft "
         "toy—fell within the same brightness and saturation bounds as the "
         "black card material, and being adjacent to the card in the image, "
         "was absorbed into the same connected component. The resulting box "
@@ -965,11 +1002,11 @@ def build_body(rid):
 
     A(heading("Camera Flash on a Reflective Background", 2))
     A(para(
-        "A card was photographed with flash on a black rubber mat with raised "
+        "A card was photographed with flash on a black Ikea footstool with raised "
         "reflective dimples. The classifier reported the letter D, with full "
         "confidence, for a card bearing T. Inspecting the mask actually presented "
         "to the network explains why, and exonerates the classifier: the flash "
-        "blew out roughly the lower half of the card, and each dimple on the mat "
+        "blew out roughly the lower half of the card, and each dimple on the footstool "
         "returned enough light to register as foreground. The segmentation stage "
         "assumes background is darker than the symbol; flash on a glossy dark "
         "object near a reflective surface violates that assumption directly. What "
@@ -978,7 +1015,7 @@ def build_body(rid):
         "failure, and the distinction matters because the remedies differ."))
     A(figure(rid[FIG_SRC["glare"]], FIG_SRC["glare"],
              "Failure case. Flash illumination on a glossy card against a "
-             "reflective dimpled mat. Specular highlights on both the card and "
+             "reflective dimpled footstool. Specular highlights on both the card and "
              "the background defeat the dark-background assumption on which the "
              "segmentation stage depends."))
 
@@ -986,7 +1023,7 @@ def build_body(rid):
     A(para(
         "Three photographs were taken against backgrounds absent from all "
         "training data: a woven carpet, a household appliance with a tiled floor "
-        "and a foot in frame, and the reflective mat above. The result was the "
+        "and a foot in frame, and the footstool above. The result was the "
         "reverse of expectation. The fine-tuned detector produced no detections "
         "on any of the three, even at a permissive confidence threshold, while "
         "the classical geometric rule located and correctly read two, and on the "
@@ -1262,12 +1299,13 @@ def build_body(rid):
         "The third round sharpens that refinement into something more "
         "specific than diversity. Its 350 added frames are less diverse than "
         "the 211 crops of the previous round by most ordinary measures: they "
-        "come from a single continuous recording, in one room, on one "
-        "afternoon, against a nearly constant background, and many are near "
+        "come from a single continuous recording, in one room, in one "
+        "session, against a nearly constant background, and many are near "
         "neighbours of each other in time. What they have instead is "
         "correspondence with the deployment condition—hand-held, at "
-        "arm's length, through the camera the system is actually demonstrated "
-        "on. That narrow, repetitive set repaired the last measurable weak "
+        "arm's length, filling much of the frame, held the way the system is "
+        "actually used—though not through the camera it is demonstrated on, "
+        "since the recording was made on a phone. That narrow, repetitive set repaired the last measurable weak "
         "class and completed the real-world sample, which suggests the "
         "governing quantity is not diversity in the abstract but overlap with "
         "the distribution the model will be asked to work in. Taken across "
@@ -1427,14 +1465,14 @@ def build_body(rid):
         "A third round settled the question the first two had circled. If the "
         "detector's real-world failures came from never having seen the "
         "deployment condition, the direct remedy was to capture training data "
-        "in that condition: cards held in the hand, filmed on the "
-        "demonstration webcam itself, extracted frame by frame and verified "
+        "in that condition: cards held in the hand at arm's length, filmed on "
+        "a phone, extracted frame by frame and verified "
         "by inspection. Adding 350 such frames raised real-world correctness "
         "to 8 of 8, repaired class 4—the last measurable weak class, at "
         "recall 0.54—to 1.00, and extended the system to a thirtieth class, "
         "while held-out aggregates stayed level. That set was narrower than "
         "the material added in the round before it, not broader: one room, "
-        "one afternoon, one background. Its advantage was correspondence with "
+        "one session, one background. Its advantage was correspondence with "
         "the conditions of use, which suggests the operative quantity was "
         "never diversity for its own sake but overlap with the distribution "
         "the system is asked to work in."))
@@ -1462,11 +1500,12 @@ def build_body(rid):
         "Tool used: Anthropic Claude, accessed through the Claude Code "
         "command-line interface, used interactively throughout development."))
     A(para(
-        "What it was used for: assistance in writing and debugging Python code "
+        "What it was used for: assistance in drafting Python code "
         "for the segmentation pipeline, the classifier, the dataset-preparation "
         "and annotation-verification scripts, the YOLO training and evaluation "
         "scripts, the real-time demonstration, and the evaluation harness; "
-        "assistance in diagnosing failures, including the tilted-card and "
+        "assistance in diagnosing possible areas of failure, including the "
+        "tilted-card and "
         "edge-touching segmentation defects, the corrupted training crops, and "
         "the hand-held card detection failure described in Section VI-E, "
         "traced through live testing of the real-time demonstration to two "
@@ -1488,14 +1527,14 @@ def build_body(rid):
         "Work in the final round that was not AI-assisted should be "
         "distinguished, since it is the round that produced the largest "
         "improvement. The decision to capture training data in the "
-        "deployment condition was the author's, as was the filming and the "
-        "sorting of extracted frames into per-card sets after automatic "
-        "segmentation was found unreliable. The frame-extraction tool "
-        "(tools/frame_grabber.py) was written outside the Claude Code "
-        "sessions declared above."))
+        "deployment condition was the author's, as was the filming, the "
+        "repeated frame extraction and hand-sorting of frames into per-card "
+        "sets after automatic segmentation was found unreliable, and the "
+        "frame-extraction tool (tools/frame_grabber.py), which was written by "
+        "the author independently of this assistance."))
     A(para(
         "Which parts were AI-assisted: the majority of the source code was "
-        "written with AI assistance. The experimental direction, the decisions "
+        "written with AI assistance. The experimental direction, the options "
         "about what to investigate, the data collection and photography, and the "
         "final interpretation of results were directed by the author. This report "
         "was drafted with AI assistance from the experimental record and then "
@@ -1509,12 +1548,6 @@ def build_body(rid):
         "II-E, several of which had passed an automated numerical check. Claims "
         "that could not be verified by measurement are identified as hypotheses "
         "in the text, most notably the augmentation diagnosis in Section VII-A."))
-    A(para(
-        "A separate script in the repository, tools/identify_cards.py, queries a "
-        "hosted vision-language model through the Azure OpenAI API. It was "
-        "written during exploration, is not part of either pipeline evaluated "
-        "here, and contributes to none of the reported results. It is retained "
-        "only as a point of reference and is declared for completeness."))
 
     # ---------------- References ----------------
     A(heading("References"))
@@ -1572,8 +1605,8 @@ def main():
     title_block = (
         para("Custom Object Detection for Text Symbols: A YOLO Baseline and a "
              "From-Scratch CNN Comparison", style="papertitle")
-        + para("[Your Name]", style="Author")
-        + para("[Matriculation Number]", style="Author")
+        + para("Lee Tze Hian", style="Author")
+        + para("U2423241F", style="Author")
         + para("College of Computing and Data Science", style="Affiliation")
         + para("Nanyang Technological University, Singapore", style="Affiliation")
         + f"<w:p><w:pPr><w:pStyle w:val=\"Affiliation\"/>{title_sect.replace('<w:sectPr', '<w:sectPr')}</w:pPr></w:p>"
@@ -1582,8 +1615,8 @@ def main():
     title_block = (
         para("Custom Object Detection for Text Symbols: A YOLO Baseline and a "
              "From-Scratch CNN Comparison", style="papertitle")
-        + para("[Your Name]", style="Author")
-        + para("[Matriculation Number]", style="Author")
+        + para("Lee Tze Hian", style="Author")
+        + para("U2423241F", style="Author")
         + para("College of Computing and Data Science", style="Affiliation")
         + para("Nanyang Technological University, Singapore", style="Affiliation")
         + '<w:p><w:pPr><w:pStyle w:val="Affiliation"/>' + title_sect + "</w:pPr></w:p>"
@@ -1593,7 +1626,7 @@ def main():
     new_xml = root_open + title_block + body + body_sect + "</w:body></w:document>"
     open(DOC_XML, "w", encoding="utf-8").write(new_xml)
 
-    out = os.path.join(HERE, "CT3205_Assignment1_Report_rev03.docx")
+    out = os.path.join(HERE, "CT3205_Assignment1_Report_rev04.docx")
     if os.path.exists(out):
         os.remove(out)
     # [Content_Types].xml first, as Word expects.

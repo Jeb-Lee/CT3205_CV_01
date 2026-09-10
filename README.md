@@ -9,12 +9,12 @@ small CNN trained from scratch) is built and measured on identical data.
 
 The detector was improved over three rounds, and **the architecture never
 changed**: every gain came from the training data. The final round —
-training on cards actually held in a hand, filmed on the demo's own webcam —
+training on cards actually held in a hand, filmed on an iPhone —
 took the detector from reading 1 of 8 real hand-held photos correctly to
 8 of 8.
 
 **Demo video:** https://youtu.be/7xptfqeyB-0
-**Report:** [`report_build/CT3205_Assignment1_Report_rev03.docx`](report_build/CT3205_Assignment1_Report_rev03.docx) (IEEE format, 12 pages)
+**Report:** [`report_build/CT3205_Assignment1_Report_rev04.docx`](report_build/CT3205_Assignment1_Report_rev04.docx) (IEEE format, 13 pages)
 
 ## Assignment deliverables
 
@@ -23,7 +23,7 @@ took the detector from reading 1 of 8 real hand-held photos correctly to
 | Source code | this repository |
 | Trained model weights | `yolo/yolo_runs/<run>/weights/best.pt` (four detectors, below); `cnn/char_cnn_model.pt` (the CNN) |
 | README and reproduction instructions | this file — see [Reproducing the work](#reproducing-the-work) |
-| Report (≤ 15 pages) | `report_build/CT3205_Assignment1_Report_rev03.docx` — 12 pages |
+| Report (≤ 15 pages) | `report_build/CT3205_Assignment1_Report_rev04.docx` — 13 pages |
 | AI Usage Declaration | report, Section IX |
 | Real-time demonstration | [`demo/webcam_demo.py`](demo/); recording at https://youtu.be/7xptfqeyB-0 |
 
@@ -58,7 +58,7 @@ confidence threshold.
 | `cards` — baseline | 18 whole photos | 29 | 0.729 | 0.794 | 0.914 | 0.894 | 1 / 8 |
 | `cards_scaletilt` | + 72 synthetic zoom/rotate/warp crops | 29 | 0.892 | 0.981 | 0.959 | 0.942 | 2 / 8 |
 | `cards_allreal` | + 211 real single-card crops | 29 | 0.895 | 0.973 | 0.995 | 0.988 | 7 / 8 |
-| **`cards_v2` — final** | + 350 hand-held webcam frames (579 total) | 30 | **0.931** | **0.990** | 0.988 | 0.983 | **8 / 8** |
+| **`cards_v2` — final** | + 350 hand-held phone-camera frames (579 total) | 30 | **0.931** | **0.990** | 0.988 | 0.983 | **8 / 8** |
 
 What the held-out aggregates hide, the per-class and real-world columns show:
 in `cards_allreal` class 4 was still at recall 0.54; in `cards_v2` it is 1.00.
@@ -87,7 +87,7 @@ yolo/                    the required YOLO detector
     make_train_lists.py           write the explicit image list each variant trains on
     augment_scale_tilt.py         round 1: synthetic zoom/rotate/perspective crops  -> synth_*
     build_solo_crops.py           round 2: the CNN's real crops as detection data   -> solo_*
-    extract_frame_folder.py       round 3: auto-label hand-held webcam frames       -> webcam_*
+    extract_frame_folder.py       round 3: auto-label hand-held phone frames         -> webcam_*
     eval_scaletilt.py             the four-detector comparison (held-out + real-world)
     run_comparison.py, eval_detection.py   YOLO vs. classical+CNN vs. hybrid
     build_yolo_dataset.py         builds the baseline dataset from raw photos (not included)
@@ -105,8 +105,8 @@ cnn/                     the comparison system: classical segmentation + from-sc
   scripts/detect_cards.py         the classical card detector (also used to auto-label YOLO data)
   scripts/build_dataset.py
   images/                         img1–25 (originals), extra/, extra2/ (later shoots), manifest.json,
-                                  extra3/ (446 hand-held webcam frames, round 3),
-                                  extra3_vid/New_Vid.mp4 (the recording they came from)
+                                  extra3/ (446 hand-held frames, round 3),
+                                  extra3_vid/New_Vid.mp4 (the iPhone recording they came from)
 
 demo/                    real-time demonstration
   webcam_demo.py                  live boxes, labels, confidences; either pipeline
@@ -115,7 +115,7 @@ tools/
   frame_grabber.py                pull cropped frames out of a video (used for round 3)
   identify_cards.py               GPT-4o via Azure OpenAI — a third approach, reference only
   add_subtitles.py, captions.txt  helpers for the demo video
-report_build/            the IEEE report: build_report.py -> CT3205_Assignment1_Report_rev03.docx
+report_build/            the IEEE report: build_report.py (+ figures/) -> CT3205_Assignment1_Report_rev04.docx
 docs/one-photo-per-card.html     earlier technical write-up of the CNN side
 RngTest/                 three real-world test photos used by the report's flash-glare case
 ```
@@ -194,11 +194,12 @@ The 350 hand-held frames in `cards_v2`'s training set are committed, but the
 whole chain back to the raw recording is here too:
 
 ```bash
-# (a) pull cropped frames out of the recording, e.g. one every 0.5 s
+# (a) drag a capture region over the recording; one cropped frame is saved every 0.5 s
 python tools/frame_grabber.py cnn/images/extra3_vid/New_Vid.mp4 --roi --every 0.5 --ext jpg -o my_frames
 
-# (b) by hand: sort the frames into cnn/images/extra3/ as <label>_Img_NNN.jpg,
-#     dropping frames caught mid-swap   (the one step that is not scripted)
+# (b) by hand: delete bad frames (card cut off by the region, out of focus, glare),
+#     sort the rest into cnn/images/extra3/ as <label>_Img_NNN.jpg, and repeat (a)
+#     with a fresh region for cards still short of frames   (the unscripted part)
 
 # (c) auto-label, applying the recorded visual-review rejections
 cd yolo
@@ -209,7 +210,7 @@ Step (c) on the committed `extra3/` reproduces the committed 350 training
 frames **byte for byte** — verified by regenerating them. It auto-labels with
 the classical detector, rejects blurry frames and per-class box-size
 outliers, then skips the 51 frames listed in `extra3_rejected.txt`. Those
-were rejected by eye: a dark shelf and a soft toy behind the card fused with
+were rejected by eye: a tinted window and a soft toy behind the card fused with
 it under the detector's brightness threshold, producing a box that included
 background. No automatic test caught them (area, aspect ratio and mask
 solidity were all tried — report Section V-G). Add `--preview` to get a
@@ -236,7 +237,7 @@ expected to land somewhere inside that spread rather than on it.
 
 ```bash
 cd report_build
-python build_report.py        # -> CT3205_Assignment1_Report_rev03.docx, from template.docx
+python build_report.py        # -> CT3205_Assignment1_Report_rev04.docx, from template.docx + figures/
 python render.py              # docx -> PDF -> page PNGs, for checking (Windows + Word + pywin32 + pymupdf)
 ```
 

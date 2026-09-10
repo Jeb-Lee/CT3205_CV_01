@@ -3,7 +3,7 @@ Two checks across the YOLO fine-tunes -- the untouched baseline
 (yolo_runs/cards), the scale+tilt-augmented run (yolo_runs/cards_scaletilt),
 the all-real run trained on the CNN's own 211 solo-crop photos plus the 18
 whole-photo images (yolo_runs/cards_allreal, see build_solo_crops.py), and
-the final 30-class run that adds 350 hand-held webcam frames
+the final 30-class run that adds 350 hand-held phone-camera frames
 (yolo_runs/cards_v2, see extract_frame_folder.py):
 
 1. Standard held-out detection/classification metrics on yolo_dataset's own

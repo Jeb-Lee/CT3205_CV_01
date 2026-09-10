@@ -85,7 +85,7 @@ knowing, because it explains why there are four checkpoints:
 - **All-real (`cards_allreal`)** added the 211 real, individually-cropped
   card photos the CNN was already trained on. 7 of 8 correct.
 - **Deployment (`cards_v2`, recommended)** added 350 frames of cards
-  actually held in a hand, filmed on this demo's own webcam. **8 of 8
+  actually held in a hand, filmed on an iPhone rather than this webcam. **8 of 8
   correct**, and the only checkpoint with the 30th class (`down_arrow`).
 
 Same architecture every time — every improvement came from the training
@@ -121,7 +121,7 @@ as `webcam_<label>_NNNN`. `space` pauses, `q` quits. Nothing drawn on the
 preview is ever saved into a frame.
 
 Use `--roi` if anything dark sits behind the card. The final round's data
-lost 51 frames to exactly that — a dark shelf and a soft toy fusing with the
+lost 51 frames to exactly that — a tinted window and a soft toy fusing with the
 card under the classical detector's brightness threshold, producing a box
 that included background — and no automatic check caught it. Check the
 results by eye before training on them (`../yolo/scripts/extract_frame_folder.py

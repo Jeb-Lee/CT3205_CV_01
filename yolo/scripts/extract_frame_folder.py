@@ -18,7 +18,7 @@ Per frame:
   3. Reject if that largest region's area, as a fraction of the frame, is
      an outlier relative to the *same class's own* other frames (more than
      `--outlier-ratio` away from that class's median). Aimed at a dark
-     object *behind* the card (a shelf, a soft toy) fusing with the card
+     object *behind* the card (a tinted window, a soft toy) fusing with the card
      under the same brightness threshold and inflating the box.
   4. Skip any frame named in `--exclude` -- the frames rejected by visual
      review. Step 3 only partly catches the background merge: where enough
